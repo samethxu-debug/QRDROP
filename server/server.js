@@ -20,8 +20,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Uploads directory
-const uploadsDir = path.join(__dirname, 'uploads');
+const isVercel = Boolean(process.env.VERCEL);
+const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -47,21 +47,25 @@ app.get('/api/network-info', (req, res) => {
   });
 });
 
-// Serve frontend in production
+// Serve frontend in production (Local or Monolith mode)
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
-if (fs.existsSync(clientDist)) {
+if (!isVercel && fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  const localIp = getLocalIpAddress();
-  console.log(`\n======================================================`);
-  console.log(`QR Drop Server is running:`);
-  console.log(`   - Local PC : http://localhost:${PORT}`);
-  console.log(`   - Phone/LAN: http://${localIp}:${PORT}`);
-  console.log(`======================================================\n`);
-});
+if (!isVercel) {
+  app.listen(PORT, '0.0.0.0', () => {
+    const localIp = getLocalIpAddress();
+    console.log(`\n======================================================`);
+    console.log(`QR Drop Server is running:`);
+    console.log(`   - Local PC : http://localhost:${PORT}`);
+    console.log(`   - Phone/LAN: http://${localIp}:${PORT}`);
+    console.log(`======================================================\n`);
+  });
+}
+
+export default app;
 

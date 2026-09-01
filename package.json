@@ -5,6 +5,7 @@
   "description": "QR Code Photo and File Sharing Web Application with Authentication",
   "main": "server/server.js",
   "scripts": {
+    "build": "npm --prefix client run build",
     "server": "node server/server.js",
     "client": "npm --prefix client run dev",
     "build:client": "npm --prefix client run build",

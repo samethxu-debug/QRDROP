@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dataDir = path.join(__dirname, 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const dataDir = isVercel ? '/tmp/data' : path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
@@ -15,14 +16,25 @@ const sharesFile = path.join(dataDir, 'shares.json');
 const inboxesFile = path.join(dataDir, 'inboxes.json');
 
 function initStorage() {
-  if (!fs.existsSync(usersFile)) {
-    fs.writeFileSync(usersFile, JSON.stringify([], null, 2));
-  }
-  if (!fs.existsSync(sharesFile)) {
-    fs.writeFileSync(sharesFile, JSON.stringify([], null, 2));
-  }
-  if (!fs.existsSync(inboxesFile)) {
-    fs.writeFileSync(inboxesFile, JSON.stringify([], null, 2));
+  const seedDataDir = path.join(__dirname, 'data');
+  const filesToInit = [
+    { file: usersFile, seed: path.join(seedDataDir, 'users.json') },
+    { file: sharesFile, seed: path.join(seedDataDir, 'shares.json') },
+    { file: inboxesFile, seed: path.join(seedDataDir, 'inboxes.json') },
+  ];
+
+  for (const item of filesToInit) {
+    if (!fs.existsSync(item.file)) {
+      if (isVercel && fs.existsSync(item.seed)) {
+        try {
+          fs.copyFileSync(item.seed, item.file);
+        } catch (e) {
+          fs.writeFileSync(item.file, JSON.stringify([], null, 2));
+        }
+      } else {
+        fs.writeFileSync(item.file, JSON.stringify([], null, 2));
+      }
+    }
   }
 }
 
