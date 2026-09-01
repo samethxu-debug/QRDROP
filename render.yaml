@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: qr-drop
+    env: node
+    plan: free
+    buildCommand: npm install && npm --prefix client install && npm --prefix client run build
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SMTP_USER
+        value: samethxu@gmail.com
+      - key: SMTP_PASS
+        value: Sa12252005@
