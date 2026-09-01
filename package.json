@@ -5,10 +5,10 @@
   "description": "QR Code Photo and File Sharing Web Application with Authentication",
   "main": "server/server.js",
   "scripts": {
-    "build": "npm --prefix client run build",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "server": "node server/server.js",
     "client": "npm --prefix client run dev",
-    "build:client": "npm --prefix client run build",
+    "build:client": "npm --prefix client install && npm --prefix client run build",
     "install:all": "npm install && npm --prefix client install",
     "start": "node server/server.js",
     "dev": "concurrently \"node server/server.js\" \"npm --prefix client run dev\""
