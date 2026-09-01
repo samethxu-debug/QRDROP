@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: qr-drop
+    name: qr-drop-share
     env: node
     plan: free
     buildCommand: npm install && npm --prefix client install && npm --prefix client run build
