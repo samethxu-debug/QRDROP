@@ -1,0 +1,85 @@
+[
+  {
+    "id": "14443e43-f739-4a5d-82ff-866c4135f446",
+    "name": "Sameth Test",
+    "username": "sameth",
+    "email": "sameth@test.com",
+    "passwordHash": "$2a$10$eDD4jmBXg6AZa8GOJ55UPu9RplsAsIDMUcWidrfTZ1RHfAldVTr5O",
+    "createdAt": "2026-08-24T19:33:11.573Z"
+  },
+  {
+    "id": "994f084f-5a66-4a94-b718-949bd1c3d7ca",
+    "googleId": "google_test_12345",
+    "name": "Korb Sameth",
+    "username": "korbsameth",
+    "email": "korb.sameth@gmail.com",
+    "picture": null,
+    "authProvider": "google",
+    "createdAt": "2026-09-01T09:07:07.736Z",
+    "lastLoginAt": "2026-09-01T09:31:57.579Z",
+    "role": "admin",
+    "isAdmin": true
+  },
+  {
+    "id": "410af0dd-08ed-4f55-a4a9-59ba242c953e",
+    "googleId": "test_google_suite_id",
+    "name": "Test Suite Runner",
+    "username": "testsuite",
+    "email": "test.suite@gmail.com",
+    "picture": null,
+    "authProvider": "google",
+    "createdAt": "2026-09-01T09:07:16.605Z",
+    "lastLoginAt": "2026-09-01T09:31:57.349Z"
+  },
+  {
+    "id": "edbc7afd-ae61-4853-b221-a937b827810d",
+    "googleId": "google_inbox_tester",
+    "name": "Tester Host",
+    "username": "testerinbox",
+    "email": "tester.inbox@gmail.com",
+    "picture": null,
+    "authProvider": "google",
+    "createdAt": "2026-09-01T09:19:24.703Z",
+    "lastLoginAt": "2026-09-01T09:31:57.851Z"
+  },
+  {
+    "id": "4a5a50fb-bbe3-44ae-a790-af4a92e0efe8",
+    "googleId": "admin_1788254744751",
+    "name": "Sameth Admin",
+    "username": "samethxu",
+    "email": "samethxu@gmail.com",
+    "role": "admin",
+    "isAdmin": true,
+    "authProvider": "password",
+    "createdAt": "2026-09-01T09:25:44.751Z",
+    "lastLoginAt": "2026-09-01T09:37:22.603Z"
+  },
+  {
+    "id": "3fe0853e-778c-4b20-9342-2ca0cac81262",
+    "googleId": "google_regular_user_99",
+    "name": "Spammer Test",
+    "username": "spammertest",
+    "email": "spammer.test@gmail.com",
+    "picture": null,
+    "role": "user",
+    "isAdmin": false,
+    "authProvider": "google",
+    "createdAt": "2026-09-01T09:25:44.770Z",
+    "lastLoginAt": "2026-09-01T09:31:58.480Z",
+    "isRestricted": false,
+    "restrictedAt": null
+  },
+  {
+    "id": "c44e265c-9f06-4a17-9857-c97d16529c0d",
+    "googleId": "104476364721980090143",
+    "name": "Korb Sameth",
+    "username": "pagesamethxu",
+    "email": "pagesamethxu@gmail.com",
+    "picture": "https://lh3.googleusercontent.com/a/ACg8ocLY11erTmLlchIZclBkzRGKSa4TUOJsIPJ2OcvwYoQa0PCYgA=s96-c",
+    "role": "user",
+    "isAdmin": false,
+    "authProvider": "google",
+    "createdAt": "2026-09-01T09:29:30.702Z",
+    "lastLoginAt": "2026-09-01T09:29:30.702Z"
+  }
+]

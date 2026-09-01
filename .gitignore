@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Production Builds
+client/dist/
+dist/
+
+# Uploads and temporary data
+server/uploads/*
+!server/uploads/.gitkeep
+*.tmp
+*.zip
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
