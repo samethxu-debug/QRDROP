@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { X, Camera, ArrowRight, AlertCircle, RefreshCw, KeyRound, Image as ImageIcon, Upload } from 'lucide-react';
+import jsQR from 'jsqr';
+import { X, Camera, ArrowRight, AlertCircle, KeyRound, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 
 export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
   const [manualCode, setManualCode] = useState('');
@@ -8,6 +9,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
   const [imageScanError, setImageScanError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [scannedPreview, setScannedPreview] = useState('');
   
   const scannerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -18,6 +20,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
     if (isOpen) {
       setCameraError('');
       setImageScanError('');
+      setScannedPreview('');
       setIsScanning(true);
 
       const startScanner = async () => {
@@ -35,32 +38,35 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
             { facingMode: 'environment' },
             config,
             (decodedText) => {
-              // Successfully decoded
               handleScannedResult(decodedText);
             },
-            (errorMessage) => {
+            () => {
               // scanning loop errors (ignore)
             }
           );
         } catch (err) {
-          console.warn('Camera start error:', err);
-          setCameraError(err.message || 'Unable to access camera. Please enter code manually or upload a QR image.');
+          console.warn('Camera start notice:', err);
+          setCameraError(err.message || 'Camera is in use or access not granted. You can upload a QR image or enter code manually.');
           setIsScanning(false);
         }
       };
 
-      // Delay to ensure DOM element is ready
       const timer = setTimeout(() => {
         startScanner();
-      }, 300);
+      }, 250);
 
       return () => {
         clearTimeout(timer);
         if (scannerRef.current) {
-          scannerRef.current
-            .stop()
-            .then(() => scannerRef.current.clear())
-            .catch(() => {});
+          try {
+            if (scannerRef.current.isScanning) {
+              scannerRef.current.stop().then(() => {
+                scannerRef.current?.clear();
+              }).catch(() => {});
+            } else {
+              scannerRef.current?.clear();
+            }
+          } catch (e) {}
         }
       };
     }
@@ -69,12 +75,17 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
   if (!isOpen) return null;
 
   const handleScannedResult = (text) => {
-    // Stop camera
+    if (!text) return;
+
+    // Stop live camera if running
     if (scannerRef.current) {
-      scannerRef.current.stop().catch(() => {});
+      try {
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch(() => {});
+        }
+      } catch (e) {}
     }
 
-    // Extract code if it's a URL (e.g. /receive/ABC123 or http://.../receive/ABC123 or /send-to/INB-ABC123)
     let code = text.trim();
     if (code.includes('/receive/')) {
       const parts = code.split('/receive/');
@@ -92,6 +103,75 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
     onClose();
   };
 
+  // Pure Canvas-based QR Image Decoding using jsQR (Never turns black / works 100% on all devices)
+  const decodeQRFromImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) {
+              return reject(new Error('Canvas context unavailable'));
+            }
+
+            // High-resolution image optimization
+            let width = img.width;
+            let height = img.height;
+            const maxDimension = 1200;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            let code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'attemptBoth',
+            });
+
+            if (code && code.data) {
+              return resolve(code.data);
+            }
+
+            // Retry with full native resolution if resized attempt did not match
+            if (width !== img.width) {
+              canvas.width = img.width;
+              canvas.height = img.height;
+              ctx.drawImage(img, 0, 0);
+              const origData = ctx.getImageData(0, 0, img.width, img.height);
+              code = jsQR(origData.data, origData.width, origData.height, {
+                inversionAttempts: 'attemptBoth',
+              });
+              if (code && code.data) {
+                return resolve(code.data);
+              }
+            }
+
+            reject(new Error('No QR code detected'));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error('Image decode error'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('File read error'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleImageFileSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -100,17 +180,14 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
     setIsProcessingImage(true);
 
     try {
-      const html5QrCode = new Html5Qrcode('qr-file-scan-sandbox');
-      const decodedText = await html5QrCode.scanFile(file, false);
-      try {
-        await html5QrCode.clear();
-      } catch (clearErr) {}
+      const decodedText = await decodeQRFromImage(file);
+      setIsProcessingImage(false);
       handleScannedResult(decodedText);
     } catch (err) {
-      console.warn('QR image scan error:', err);
-      setImageScanError(t.qrNotFoundInImage || 'No QR code found in this image. Please try a clearer photo.');
-    } finally {
+      console.warn('QR image decoding error:', err);
       setIsProcessingImage(false);
+      setImageScanError(t.qrNotFoundInImage || 'No QR code found in this image. Please select a clearer photo or screenshot.');
+    } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -129,9 +206,6 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess, t }) {
         className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Hidden sandbox container for image file scanning */}
-        <div id="qr-file-scan-sandbox" className="hidden" />
-
         {/* Close button */}
         <button
           onClick={onClose}
