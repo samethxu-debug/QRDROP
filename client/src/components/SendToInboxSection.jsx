@@ -257,10 +257,38 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
                 </p>
               </div>
 
+              {/* Sent Files Preview Strip */}
+              {previews.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 overflow-x-auto py-1">
+                    {previews.slice(0, 4).map((p, idx) => (
+                      <div
+                        key={idx}
+                        className="w-12 h-12 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0"
+                      >
+                        {p.previewUrl ? (
+                          <img src={p.previewUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-teal-400">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {previews.length > 4 && (
+                      <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-teal-400 flex items-center justify-center shrink-0">
+                        +{previews.length - 4}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
                 <span>Sending to: <strong className="text-teal-400">{inboxInfo?.hostName}</strong></span>
                 <span className="text-slate-400 font-mono text-[11px]">{files.length} {t.filesCount} • {formatFileSize(totalSize)}</span>
               </div>
+
             </>
           )}
 

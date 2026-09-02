@@ -301,16 +301,35 @@ async function verifyShareAccess(req, share) {
   return false;
 }
 
-// Get user's transfer history
+// Get user's transfer history (both QR Shares and Personal Inbox transfers)
 router.get('/my-shares', requireAuth, (req, res) => {
   try {
     const userShares = db.findSharesByUserId(req.user.id);
-    const safeShares = userShares.map(({ passwordHash, ...s }) => s);
-    return res.json({ shares: safeShares });
+    const safeShares = userShares.map(({ passwordHash, ...s }) => ({
+      ...s,
+      type: 'share',
+    }));
+
+    // Find all personal inboxes created by this user
+    const inboxes = (db.getInboxes() || []).filter((i) => i.userId === req.user.id);
+    const inboxTransfers = [];
+    for (const inbox of inboxes) {
+      for (const t of inbox.pendingTransfers || []) {
+        inboxTransfers.push({
+          ...t,
+          type: 'inbox_transfer',
+          inboxId: inbox.id,
+          inboxHostName: inbox.hostName,
+        });
+      }
+    }
+
+    return res.json({ shares: safeShares, inboxTransfers });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to load transfer history.' });
   }
 });
+
 
 // Unlock password-protected share and receive a signed download token
 router.post('/:code/unlock', codeLookupLimiter, async (req, res) => {
