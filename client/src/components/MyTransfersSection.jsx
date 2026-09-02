@@ -19,14 +19,18 @@ import {
   User,
   X,
   ArrowDownToLine,
-  CheckCircle2
+  CheckCircle2,
+  ScanLine,
+  Send
 } from 'lucide-react';
 import ImageLightbox from './ImageLightbox';
 
 export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenReceive, t }) {
   const [transfers, setTransfers] = useState([]);
+  const [claimedShares, setClaimedShares] = useState([]);
   const [inboxTransfers, setInboxTransfers] = useState([]);
-  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'needs_review' | 'shares' | 'inbox'
+  const [outgoingInboxTransfers, setOutgoingInboxTransfers] = useState([]);
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'needs_review' | 'shares' | 'claimed' | 'inbox'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState(null);
@@ -50,7 +54,9 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load transfers');
       setTransfers(data.shares || []);
+      setClaimedShares(data.claimedShares || []);
       setInboxTransfers(data.inboxTransfers || []);
+      setOutgoingInboxTransfers(data.outgoingInboxTransfers || []);
     } catch (err) {
       setError(err.message || 'Error fetching transfers');
     } finally {
@@ -78,6 +84,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
         throw new Error(data.error || 'Failed to delete');
       }
       setTransfers((prev) => prev.filter((s) => s.code !== code));
+      setClaimedShares((prev) => prev.filter((s) => s.code !== code));
     } catch (err) {
       alert(err.message || 'Failed to delete transfer');
     }
@@ -181,7 +188,8 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
   }
 
   // Filtered items
-  const filteredShares = filterTab === 'all' || filterTab === 'shares' ? transfers : [];
+  const filteredCreatedShares = filterTab === 'all' || filterTab === 'shares' ? transfers : [];
+  const filteredClaimedShares = filterTab === 'all' || filterTab === 'claimed' ? claimedShares : [];
   const filteredInbox =
     filterTab === 'all'
       ? inboxTransfers
@@ -190,8 +198,9 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
       : filterTab === 'inbox'
       ? inboxTransfers
       : [];
+  const filteredOutgoingInbox = filterTab === 'all' || filterTab === 'inbox' ? outgoingInboxTransfers : [];
 
-  const totalCount = transfers.length + inboxTransfers.length;
+  const totalCount = transfers.length + claimedShares.length + inboxTransfers.length + outgoingInboxTransfers.length;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -208,7 +217,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
           </p>
         </div>
         <div className="text-xs font-semibold text-teal-400 bg-teal-500/10 px-3 py-1.5 rounded-xl border border-teal-500/20 self-start">
-          {totalCount} {t.filesCount} Total
+          {totalCount} Total Transfers
         </div>
       </div>
 
@@ -295,7 +304,18 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
               : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          QR Shares ({transfers.length})
+          My QR Shares ({transfers.length})
+        </button>
+
+        <button
+          onClick={() => setFilterTab('claimed')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+            filterTab === 'claimed'
+              ? 'bg-teal-500 text-slate-950'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          Received QR ({claimedShares.length})
         </button>
 
         <button
@@ -306,7 +326,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
               : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          Inbox Requests ({inboxTransfers.length})
+          Inbox Requests ({inboxTransfers.length + outgoingInboxTransfers.length})
         </button>
       </div>
 
@@ -315,18 +335,18 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
           <div className="w-10 h-10 mx-auto rounded-full border-4 border-teal-500/20 border-t-teal-400 animate-spin" />
           <p className="text-xs text-slate-400">Loading your transfers...</p>
         </div>
-      ) : filteredShares.length === 0 && filteredInbox.length === 0 ? (
+      ) : totalCount === 0 ? (
         <div className="py-16 text-center space-y-3 bg-slate-900/60 rounded-3xl border border-slate-800">
           <FolderArchive className="w-12 h-12 mx-auto text-slate-600" />
           <p className="text-sm font-semibold text-slate-300">{t.noTransfers}</p>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Uploaded photos and files will be organized and saved here automatically.
+            Created QR codes and scanned transfers from other devices will automatically appear here.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          {/* 1. Pending & Accepted Inbox Transfers */}
+          {/* 1. Incoming Personal Inbox Transfers */}
           {filteredInbox.map((item) => {
             const isPending = item.status === 'pending_approval';
             const isAccepted = item.status === 'accepted';
@@ -344,6 +364,9 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded-md bg-slate-950 text-teal-300 font-mono text-[11px] font-bold border border-slate-800">
                         {item.inboxId}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/30">
+                        Inbox Received
                       </span>
                       {isPending && (
                         <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase flex items-center gap-1">
@@ -457,8 +480,91 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
             );
           })}
 
-          {/* 2. Standard QR Shares */}
-          {filteredShares.map((item) => {
+          {/* 2. Outgoing Sent Inbox Transfers */}
+          {filteredOutgoingInbox.map((item) => {
+            const isPending = item.status === 'pending_approval';
+            const isAccepted = item.status === 'accepted';
+            const mediaFiles = item.files?.filter((f) => f.isImage || f.mimetype?.startsWith('image/') || f.mimetype?.startsWith('video/')) || [];
+
+            return (
+              <div
+                key={item.transferId}
+                className="p-5 rounded-3xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-3 relative group shadow-xl"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-950 text-teal-300 font-mono text-[11px] font-bold border border-slate-800">
+                        {item.inboxId}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                        Sent to Inbox
+                      </span>
+                      {isPending ? (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/30">
+                          {t.waitingConfirmationBadge || 'Waiting Confirmation'}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                          {t.statusAcceptedBadge || 'Accepted'}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-bold text-white truncate">
+                      {item.title}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Media Thumbnails Preview Strip */}
+                {mediaFiles.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                    {mediaFiles.slice(0, 4).map((img, idx) => (
+                      <div
+                        key={img.id}
+                        onClick={() => {
+                          setLightboxShare({
+                            code: item.inboxId,
+                            files: mediaFiles,
+                            customPreviewUrl: (f) => `/api/inbox/${item.inboxId}/preview/${f.id}`,
+                            customDownloadUrl: (f) => `/api/inbox/${item.inboxId}/download/${item.transferId}`,
+                          });
+                          setLightboxIndex(idx);
+                        }}
+                        className="group/thumb relative w-12 h-12 rounded-xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500 cursor-pointer shrink-0 transition"
+                      >
+                        <img
+                          src={`/api/inbox/${item.inboxId}/preview/${img.id}`}
+                          alt={img.originalName}
+                          className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-200"
+                          onError={(e) => {
+                            e.target.style.opacity = '0';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center text-teal-300">
+                          <Eye className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-400" />
+                    <span>{item.files?.length || 0} Files ({formatFileSize(item.totalSize)})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-teal-400" />
+                    <span>To: {item.inboxHostName || 'Host Device'}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* 3. Claimed / Received QR Shares (scanned from others) */}
+          {filteredClaimedShares.map((item) => {
             const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date();
             const mediaFiles = item.files?.filter((f) => f.isImage || f.mimetype?.startsWith('image/') || f.mimetype?.startsWith('video/')) || [];
 
@@ -472,6 +578,117 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded-md bg-slate-950 text-teal-300 font-mono text-[11px] font-bold border border-slate-800">
                         {item.code}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-400 text-[10px] font-bold border border-teal-500/30">
+                        Scanned & Claimed
+                      </span>
+                      {isExpired ? (
+                        <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/30">
+                          {t.statusExpired}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                          {t.statusActive}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-bold text-white truncate">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  <button
+                    onClick={() => handleDelete(item.code)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                    title={t.deleteTransfer}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Media Thumbnails Preview Strip */}
+                {mediaFiles.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                    {mediaFiles.slice(0, 4).map((img, idx) => (
+                      <div
+                        key={img.id}
+                        onClick={() => {
+                          setLightboxShare({
+                            code: item.code,
+                            files: mediaFiles,
+                          });
+                          setLightboxIndex(idx);
+                        }}
+                        className="group/thumb relative w-12 h-12 rounded-xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500 cursor-pointer shrink-0 transition"
+                      >
+                        <img
+                          src={`/api/shares/${item.code}/preview/${img.id}`}
+                          alt={img.originalName}
+                          className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-200"
+                          onError={(e) => {
+                            e.target.style.opacity = '0';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center text-teal-300">
+                          <Eye className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-400" />
+                    <span>{item.files?.length || 0} Files ({formatFileSize(item.totalSize)})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-teal-400" />
+                    <span>From: {item.senderName}</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1">
+                  <a
+                    href={`/api/shares/${item.code}/download-all`}
+                    download
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 text-xs font-bold shadow-lg shadow-teal-500/20 transition cursor-pointer"
+                  >
+                    <ArrowDownToLine className="w-3.5 h-3.5" />
+                    <span>Download All</span>
+                  </a>
+
+                  <button
+                    onClick={() => onOpenReceive(item.code)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition cursor-pointer"
+                    title="Open View"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* 4. Created QR Shares */}
+          {filteredCreatedShares.map((item) => {
+            const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date();
+            const mediaFiles = item.files?.filter((f) => f.isImage || f.mimetype?.startsWith('image/') || f.mimetype?.startsWith('video/')) || [];
+
+            return (
+              <div
+                key={item.id}
+                className="p-5 rounded-3xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-3 relative group shadow-xl"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-950 text-teal-300 font-mono text-[11px] font-bold border border-slate-800">
+                        {item.code}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-400 text-[10px] font-bold border border-teal-500/30">
+                        My QR Share
                       </span>
                       {isExpired ? (
                         <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/30">
@@ -678,7 +895,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-between z-20">
                       <span className="self-end p-1 rounded-lg bg-slate-900/80 text-teal-300 border border-slate-700">
-                        <Eye className="w-3 h-3" />
+                        <Eye className="w-3.5 h-3.5" />
                       </span>
                       <p className="text-[10px] font-semibold text-white truncate">{file.originalName}</p>
                     </div>

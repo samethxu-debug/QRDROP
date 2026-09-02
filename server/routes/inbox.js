@@ -158,7 +158,7 @@ router.get('/:inboxId', (req, res) => {
 });
 
 // 3. Sender uploads files into Host's Inbox
-router.post('/:inboxId/upload', inboxUploadLimiter, upload.array('files', 50), async (req, res) => {
+router.post('/:inboxId/upload', optionalAuth, inboxUploadLimiter, upload.array('files', 50), async (req, res) => {
   try {
     const { inboxId } = req.params;
     const inbox = db.findInboxById(inboxId);
@@ -256,7 +256,8 @@ router.post('/:inboxId/upload', inboxUploadLimiter, upload.array('files', 50), a
 
     const transfer = {
       transferId: uuidv4(),
-      senderName: senderName ? senderName.trim() : 'Guest Phone',
+      senderUserId: req.user ? req.user.id : null,
+      senderName: req.user?.name || (senderName ? senderName.trim() : 'Guest Phone'),
       title: finalTitle,
       folderName: folderName || '',
       note: note ? note.trim() : '',
@@ -265,6 +266,7 @@ router.post('/:inboxId/upload', inboxUploadLimiter, upload.array('files', 50), a
       status: 'pending_approval', // pending_approval | accepted | rejected
       sentAt: new Date().toISOString(),
     };
+
 
     const pending = inbox.pendingTransfers || [];
     pending.unshift(transfer);

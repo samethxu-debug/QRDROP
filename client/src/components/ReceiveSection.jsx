@@ -39,8 +39,15 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
         url += `?password=${encodeURIComponent(unlockPassword)}`;
       }
 
-      const res = await fetch(url);
+      const token = localStorage.getItem('qr_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(url, { headers });
       const data = await res.json();
+
 
       if (res.status === 401 && data.isPasswordProtected) {
         setIsPasswordRequired(true);

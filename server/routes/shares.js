@@ -303,16 +303,30 @@ async function verifyShareAccess(req, share) {
   return false;
 }
 
-// Get user's transfer history (both QR Shares and Personal Inbox transfers)
+// Get user's transfer history (Created QR Shares, Claimed/Received Transfers, Inbox Transfers)
 router.get('/my-shares', requireAuth, (req, res) => {
   try {
-    const userShares = db.findSharesByUserId(req.user.id);
-    const safeShares = userShares.map(({ passwordHash, ...s }) => ({
-      ...s,
-      type: 'share',
-    }));
+    const allShares = db.getShares() || [];
 
-    // Find all personal inboxes created by this user
+    // 1. Shares created by this user
+    const createdShares = allShares
+      .filter((s) => s.userId === req.user.id)
+      .map(({ passwordHash, ...s }) => ({
+        ...s,
+        type: 'share',
+        role: 'sender',
+      }));
+
+    // 2. Shares received/claimed by this user from other senders
+    const claimedShares = allShares
+      .filter((s) => s.userId !== req.user.id && (s.claimedByUserIds || []).includes(req.user.id))
+      .map(({ passwordHash, ...s }) => ({
+        ...s,
+        type: 'claimed_share',
+        role: 'receiver',
+      }));
+
+    // 3. User personal inboxes (incoming requests to host)
     const inboxes = (db.getInboxes() || []).filter((i) => i.userId === req.user.id);
     const inboxTransfers = [];
     for (const inbox of inboxes) {
@@ -322,16 +336,59 @@ router.get('/my-shares', requireAuth, (req, res) => {
           type: 'inbox_transfer',
           inboxId: inbox.id,
           inboxHostName: inbox.hostName,
+          role: 'receiver',
         });
       }
     }
 
-    return res.json({ shares: safeShares, inboxTransfers });
+    // 4. Outgoing transfers sent by this user to another host's inbox
+    const allInboxes = db.getInboxes() || [];
+    const outgoingInboxTransfers = [];
+    for (const inbox of allInboxes) {
+      if (inbox.userId !== req.user.id) {
+        for (const t of inbox.pendingTransfers || []) {
+          if (t.senderUserId === req.user.id) {
+            outgoingInboxTransfers.push({
+              ...t,
+              type: 'sent_inbox_transfer',
+              inboxId: inbox.id,
+              inboxHostName: inbox.hostName,
+              role: 'sender',
+            });
+          }
+        }
+      }
+    }
+
+    return res.json({ 
+      shares: createdShares, 
+      claimedShares, 
+      inboxTransfers,
+      outgoingInboxTransfers 
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to load transfer history.' });
   }
 });
 
+// Explicitly claim / save a received transfer into user's history
+router.post('/:code/claim', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const share = db.findShareByCode(code);
+    if (!share) return res.status(404).json({ error: 'Transfer not found.' });
+
+    const claimed = share.claimedByUserIds || [];
+    if (!claimed.includes(req.user.id)) {
+      claimed.push(req.user.id);
+      db.updateShare(code, { claimedByUserIds: claimed });
+    }
+
+    return res.json({ success: true, message: 'Transfer saved to your history.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to claim transfer.' });
+  }
+});
 
 // Unlock password-protected share and receive a signed download token
 router.post('/:code/unlock', codeLookupLimiter, async (req, res) => {
@@ -371,7 +428,7 @@ router.post('/:code/unlock', codeLookupLimiter, async (req, res) => {
 });
 
 // Get Share details by Code (with password verification if needed)
-router.get('/:code', codeLookupLimiter, async (req, res) => {
+router.get('/:code', optionalAuth, codeLookupLimiter, async (req, res) => {
   try {
     const { code } = req.params;
     const { password, token } = req.query;
@@ -422,6 +479,15 @@ router.get('/:code', codeLookupLimiter, async (req, res) => {
       }
     }
 
+    // If logged-in user is claiming/viewing someone else's share, automatically record to their history
+    if (req.user && req.user.id !== share.userId) {
+      const claimed = share.claimedByUserIds || [];
+      if (!claimed.includes(req.user.id)) {
+        claimed.push(req.user.id);
+        db.updateShare(code, { claimedByUserIds: claimed });
+      }
+    }
+
     const { passwordHash: _, ...safeShare } = share;
     const downloadToken = generateDownloadToken(share.code, share.passwordHash || 'public');
     return res.json({ share: safeShare, downloadToken });
@@ -430,6 +496,7 @@ router.get('/:code', codeLookupLimiter, async (req, res) => {
     return res.status(500).json({ error: 'Failed to retrieve transfer.' });
   }
 });
+
 
 // Stream / Preview Image or File (supports HTTP 206 Range requests for videos)
 router.get('/:code/preview/:fileId', async (req, res) => {
