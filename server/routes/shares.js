@@ -255,6 +255,17 @@ router.get('/:code', async (req, res) => {
       return res.status(410).json({ error: 'This transfer link has expired.' });
     }
 
+    // Check if files still exist on disk (prevents phantom transfers after server wipes)
+    const existingFiles = (share.files || []).filter((f) => {
+      const filePath = path.join(uploadsDir, f.filename);
+      return fs.existsSync(filePath);
+    });
+
+    if (existingFiles.length === 0 && share.files && share.files.length > 0) {
+      return res.status(404).json({ error: 'This transfer has expired or the files are no longer available on the server.' });
+    }
+
+
     // Check password protection
     if (share.isPasswordProtected) {
       if (!password) {

@@ -247,19 +247,21 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
             {imageFiles.map((img, idx) => (
               <div 
                 key={img.id}
-                className="group relative aspect-square rounded-2xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500/50 transition cursor-pointer"
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500/50 transition cursor-pointer flex items-center justify-center"
                 onClick={() => setLightboxIndex(idx)}
               >
+                <ImageIcon className="w-8 h-8 text-teal-400/40 absolute pointer-events-none" />
                 <img
                   src={`/api/shares/${share.code}/preview/${img.id}`}
                   alt={img.originalName}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300 relative z-10"
                   loading="lazy"
                   onError={(e) => {
                     // If preview fails, show a clean background fallback
                     e.target.style.opacity = '0';
                   }}
                 />
+
                 
                 {/* Hover overlay with action buttons */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-between">
