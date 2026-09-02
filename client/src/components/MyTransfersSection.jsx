@@ -10,14 +10,22 @@ import {
   LogIn, 
   AlertCircle,
   Copy,
-  Check
+  Check,
+  Eye,
+  Image as ImageIcon,
+  Film,
+  Lock
 } from 'lucide-react';
+import ImageLightbox from './ImageLightbox';
 
 export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenReceive, t }) {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState(null);
+  const [lightboxShare, setLightboxShare] = useState(null);
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+
 
   const fetchTransfers = async () => {
     if (!user) return;
@@ -145,15 +153,16 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {transfers.map((item) => {
             const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date();
+            const mediaFiles = item.files?.filter((f) => f.isImage || f.mimetype?.startsWith('image/') || f.mimetype?.startsWith('video/')) || [];
 
             return (
               <div
                 key={item.id}
-                className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-3 relative group"
+                className="p-5 rounded-3xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-3 relative group shadow-xl"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded-md bg-slate-950 text-teal-300 font-mono text-[11px] font-bold border border-slate-800">
                         {item.code}
                       </span>
@@ -166,6 +175,11 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
                           {t.statusActive}
                         </span>
                       )}
+                      {item.isPasswordProtected && (
+                        <span className="p-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30" title="Password Protected">
+                          <Lock className="w-3 h-3" />
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-sm font-bold text-white truncate">
                       {item.title}
@@ -174,12 +188,52 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
 
                   <button
                     onClick={() => handleDelete(item.code)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
                     title={t.deleteTransfer}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+
+                {/* Media Thumbnails Preview Strip (if media exists) */}
+                {mediaFiles.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                    {mediaFiles.slice(0, 4).map((img, idx) => (
+                      <div
+                        key={img.id}
+                        onClick={() => {
+                          setLightboxShare(item);
+                          setLightboxIndex(idx);
+                        }}
+                        className="group/thumb relative w-12 h-12 rounded-xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500 cursor-pointer shrink-0 transition"
+                        title={img.originalName}
+                      >
+                        <img
+                          src={`/api/shares/${item.code}/preview/${img.id}`}
+                          alt={img.originalName}
+                          className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-200"
+                          onError={(e) => {
+                            e.target.style.opacity = '0';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center text-teal-300">
+                          <Eye className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    ))}
+                    {mediaFiles.length > 4 && (
+                      <button
+                        onClick={() => {
+                          setLightboxShare(item);
+                          setLightboxIndex(0);
+                        }}
+                        className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-teal-400 hover:text-white flex items-center justify-center shrink-0 hover:border-teal-500 transition cursor-pointer"
+                      >
+                        +{mediaFiles.length - 4}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
                   <div className="flex items-center gap-1.5">
@@ -200,7 +254,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={() => onShowQR(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
                   >
                     <QrCode className="w-3.5 h-3.5 text-teal-400" />
                     <span>{t.viewQR}</span>
@@ -208,7 +262,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
 
                   <button
                     onClick={() => handleCopy(item.code)}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition cursor-pointer"
                     title="Copy Link"
                   >
                     {copiedCode === item.code ? (
@@ -220,7 +274,7 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
 
                   <button
                     onClick={() => onOpenReceive(item.code)}
-                    className="p-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 transition"
+                    className="p-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 transition cursor-pointer"
                     title="Open Receiver View"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -231,6 +285,22 @@ export default function MyTransfersSection({ user, onOpenAuth, onShowQR, onOpenR
             );
           })}
         </div>
+      )}
+
+      {/* Lightbox for previewing images/videos in history */}
+      {lightboxShare && lightboxIndex >= 0 && (
+        <ImageLightbox
+          images={lightboxShare.files?.filter((f) => f.isImage || f.mimetype?.startsWith('image/') || f.mimetype?.startsWith('video/')) || []}
+          currentIndex={lightboxIndex}
+          isOpen={lightboxIndex >= 0}
+          onClose={() => {
+            setLightboxShare(null);
+            setLightboxIndex(-1);
+          }}
+          onNavigate={(newIdx) => setLightboxIndex(newIdx)}
+          shareCode={lightboxShare.code}
+          t={t}
+        />
       )}
 
     </div>

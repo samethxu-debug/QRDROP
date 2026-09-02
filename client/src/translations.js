@@ -52,7 +52,6 @@ export const translations = {
     uploading: "កំពុងបញ្ចូលឯកសារ...",
     securityRestrictedWarning: "ប្រព័ន្ធបានទប់ស្កាត់ឯកសារមិនមានសុវត្ថិភាព (Executables/Scripts/Archives)",
     securityBlockedFiles: "ឯកសារដែលត្រូវបានបដិសេធ៖",
-    sameWifiTip: "សូមប្រាកដថាទូរស័ព្ទ និងកុំព្យូទ័របានភ្ជាប់ Wi-Fi ជាមួយគ្នា",
 
     // Founder Info
     founderLabel: "ស្ថាបនិក (Founder)",
@@ -92,6 +91,18 @@ export const translations = {
     generateNewQR: "បង្កើត QR Code ថ្មី",
     generatingPersonalQR: "កំពុងបង្កើត QR Code ផ្ទាល់ខ្លួនថ្មី...",
 
+    // Review & Confirmation Badges & Actions
+    needsReviewBadge: "ត្រូវការពិនិត្យមើល",
+    waitingConfirmationBadge: "រង់ចាំការយល់ព្រមទទួល",
+    reviewAndConfirmBtn: "ពិនិត្យ & យល់ព្រមទទួល",
+    reviewSentFilesBtn: "ពិនិត្យមើលឯកសារដែលផ្ញើ",
+    waitingRecipientToReview: "រង់ចាំអ្នកទទួលពិនិត្យមើល និងចុចយល់ព្រមទទួល...",
+    statusAcceptedBadge: "បានយល់ព្រមទទួល",
+    statusDeclinedBadge: "បានបដិសេធ",
+    pendingReviewBanner: "មានឯកសារផ្ញើចូលមកថ្មី៖ តម្រូវឱ្យអ្នកពិនិត្យមើលរូបភាព និងយល់ព្រមទទួល",
+    markNeedUserView: "តម្រូវឱ្យពិនិត្យមើល (Needs User Review)",
+    quickReviewNotice: "ចុចដើម្បីមើលរូបភាព/ឯកសារមុននឹងរក្សាទុកចូលម៉ាស៊ីន",
+
     // Sender View (Send to Inbox)
     sendToRecipient: "ផ្ញើត្រង់ទៅកាន់អ្នកទទួល",
     yourNamePlaceholder: "ឈ្មោះរបស់អ្នកផ្ញើ (ឧ. ទូរស័ព្ទដៃ ១)",
@@ -104,6 +115,7 @@ export const translations = {
     transferDeclinedSubtitle: "អ្នកទទួលមិនបានយល់ព្រមទទួលការផ្ញើឯកសារនេះឡើយ។",
     sendMoreFiles: "ផ្ញើឯកសារបន្ថែមទៀត",
     tryAgain: "ព្យាយាមផ្ញើម្តងទៀត",
+
 
     // Scanner
     scanCameraTitle: "ស្កេន QR Code ទទួលឯកសារ",
@@ -224,7 +236,6 @@ export const translations = {
     uploading: "Uploading Files...",
     securityRestrictedWarning: "Dangerous file types are restricted for security (Executables/Scripts/Archives)",
     securityBlockedFiles: "Blocked files:",
-    sameWifiTip: "Make sure phone and computer are connected to the same Wi-Fi network",
 
     // Founder Info
     founderLabel: "Founder & Developer",
@@ -263,6 +274,18 @@ export const translations = {
     loginRequiredForReceiveSubtitle: "Please sign in with your Google account to create and activate your personal receive QR code.",
     generateNewQR: "Generate New QR Code",
     generatingPersonalQR: "Generating your unique personal receive QR code...",
+
+    // Review & Confirmation Badges & Actions
+    needsReviewBadge: "Needs Review",
+    waitingConfirmationBadge: "Waiting Confirmation",
+    reviewAndConfirmBtn: "Review & Confirm",
+    reviewSentFilesBtn: "Review Sent Files",
+    waitingRecipientToReview: "Waiting for recipient to review and confirm...",
+    statusAcceptedBadge: "Accepted & Saved",
+    statusDeclinedBadge: "Declined",
+    pendingReviewBanner: "Incoming transfer request: Please review files before accepting",
+    markNeedUserView: "Requires User Review",
+    quickReviewNotice: "Click to preview media/files before saving to device",
 
     // Sender View (Send to Inbox)
     sendToRecipient: "Send Directly to Recipient",

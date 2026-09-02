@@ -236,19 +236,30 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
           
           {transferStatus === 'pending_approval' && (
             <>
-              <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 animate-pulse">
-                <Clock className="w-8 h-8" />
+              <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping" />
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-teal-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20">
+                  <Clock className="w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
+                </div>
               </div>
-              <div>
+
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>{t.waitingConfirmationBadge || 'Waiting for Confirmation'}</span>
+                </div>
+
                 <h2 className="text-xl font-extrabold text-white">
                   {t.filesSentWaitingTitle || 'Files Sent to Recipient!'}
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  {t.filesSentWaitingSubtitle || 'Waiting for the recipient to preview and accept the transfer on their screen...'}
+                <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                  {t.waitingRecipientToReview || 'Waiting for the recipient to preview and accept the transfer on their screen...'}
                 </p>
               </div>
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400">
+
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
                 <span>Sending to: <strong className="text-teal-400">{inboxInfo?.hostName}</strong></span>
+                <span className="text-slate-400 font-mono text-[11px]">{files.length} {t.filesCount} • {formatFileSize(totalSize)}</span>
               </div>
             </>
           )}

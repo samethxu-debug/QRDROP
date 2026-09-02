@@ -178,14 +178,12 @@ export default function QRCodeModal({ share, isOpen, onClose, t, onOpenReceive }
         </div>
 
         {/* Bottom Helper Note */}
-        <div className="mt-4 pt-3 border-t border-slate-850 space-y-1.5">
+        <div className="mt-4 pt-3 border-t border-slate-850">
           <p className="text-[11px] text-slate-400">
             {t.scanWithPhone}
           </p>
-          <p className="text-[10px] text-teal-400/80 bg-teal-500/10 py-1 px-2.5 rounded-lg border border-teal-500/20 inline-block">
-            {t.sameWifiTip}
-          </p>
         </div>
+
 
       </div>
     </div>

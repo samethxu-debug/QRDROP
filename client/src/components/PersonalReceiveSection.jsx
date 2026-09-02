@@ -31,6 +31,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const [statusMessage, setStatusMessage] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(true);
   const pollTimerRef = useRef(null);
 
   // Initialize or generate a fresh unique Inbox
@@ -236,6 +237,40 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
         </div>
       )}
 
+      {/* Persistent Needs Review Notification Bar (When incoming transfer is pending approval) */}
+      {pendingTransfer && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-teal-500/15 border-2 border-amber-500/40 text-amber-300 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in zoom-in-95">
+          <div className="flex items-center gap-3.5">
+            <span className="relative flex h-3.5 w-3.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-[10px] uppercase tracking-wider">
+                  {t.needsReviewBadge || 'Needs Review'}
+                </span>
+                <span className="font-bold text-white text-sm">
+                  {pendingTransfer.title}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                {t.pendingReviewBanner || 'Incoming transfer: Please review files before accepting'} ({pendingTransfer.files?.length} files • {formatFileSize(pendingTransfer.totalSize)} • {pendingTransfer.senderName})
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowReviewModal(true)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-teal-500 hover:from-amber-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-105 transition cursor-pointer flex items-center justify-center gap-2 shrink-0"
+          >
+            <Eye className="w-4 h-4" />
+            <span>{t.reviewAndConfirmBtn || 'Review & Confirm'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Container */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
@@ -294,11 +329,8 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
             </button>
           </div>
 
-          <p className="text-[11px] text-teal-400/80 bg-teal-500/10 py-1.5 px-3 rounded-xl border border-teal-500/20 inline-block">
-            {t.sameWifiTip}
-          </p>
-
         </div>
+
 
         {/* Right: Live Activity & Instructions (6 cols) */}
         <div className="md:col-span-6 space-y-4">
@@ -379,7 +411,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
       </div>
 
       {/* Review & Preview Modal (View មុននឹងទទួល) */}
-      {pendingTransfer && (
+      {pendingTransfer && showReviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
           <div 
             className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden space-y-4 max-h-[90vh] flex flex-col"
@@ -388,9 +420,14 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
             {/* Modal Header */}
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
               <div>
-                <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-bold uppercase tracking-wider">
-                  {t.incomingTransferAlert || 'Incoming Transfer Request'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-bold uppercase tracking-wider">
+                    {t.incomingTransferAlert || 'Incoming Transfer Request'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase">
+                    {t.needsReviewBadge || 'Needs Review'}
+                  </span>
+                </div>
                 <h2 className="text-xl font-extrabold text-white mt-1">
                   {pendingTransfer.title}
                 </h2>
@@ -404,13 +441,15 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
               </div>
 
               <button
-                onClick={() => handleRejectTransfer(pendingTransfer)}
-                disabled={actionLoading}
+                type="button"
+                onClick={() => setShowReviewModal(false)}
                 className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                title="Minimize / Close View"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
 
             {/* Note / Message */}
             {pendingTransfer.note && (
