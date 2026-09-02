@@ -102,6 +102,12 @@ export const translations = {
     pendingReviewBanner: "មានឯកសារផ្ញើចូលមកថ្មី៖ តម្រូវឱ្យអ្នកពិនិត្យមើលរូបភាព និងយល់ព្រមទទួល",
     markNeedUserView: "តម្រូវឱ្យពិនិត្យមើល (Needs User Review)",
     quickReviewNotice: "ចុចដើម្បីមើលរូបភាព/ឯកសារមុននឹងរក្សាទុកចូលម៉ាស៊ីន",
+    claimTransferBtn: "ទទួលយក & រក្សាទុកក្នុងប្រវត្តិ",
+    claimedBadge: "បានរក្សាទុកក្នុងប្រវត្តិ",
+    claimTransferTip: "រក្សាទុកការផ្ញើនេះចូលក្នុងប្រវត្តិគណនីរបស់អ្នក",
+    unclaimTransferTip: "ចុចដើម្បីលុបចេញពីប្រវត្តិ",
+    loginToClaimTransfer: "សូមចូលប្រើប្រាស់គណនី Google ដើម្បីរក្សាទុកការផ្ញើនេះចូលក្នុងប្រវត្តិរបស់អ្នក",
+
 
     // Sender View (Send to Inbox)
     sendToRecipient: "ផ្ញើត្រង់ទៅកាន់អ្នកទទួល",
@@ -288,6 +294,12 @@ export const translations = {
     pendingReviewBanner: "Incoming transfer request: Please review files before accepting",
     markNeedUserView: "Requires User Review",
     quickReviewNotice: "Click to preview media/files before saving to device",
+    claimTransferBtn: "Claim & Save to History",
+    claimedBadge: "Saved in History",
+    claimTransferTip: "Save this transfer to your permanent history",
+    unclaimTransferTip: "Click to remove from your history",
+    loginToClaimTransfer: "Please sign in with Google to save this transfer to your history",
+
 
     // Sender View (Send to Inbox)
     sendToRecipient: "Send Directly to Recipient",

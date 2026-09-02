@@ -15,7 +15,9 @@ import {
   AlertCircle, 
   CheckCircle2, 
   QrCode,
-  ArrowLeft
+  ArrowLeft,
+  BookmarkPlus,
+  Check
 } from 'lucide-react';
 import ImageLightbox from './ImageLightbox';
 
@@ -26,6 +28,8 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
   const [downloadToken, setDownloadToken] = useState('');
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
@@ -72,6 +76,7 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
       }
 
       setShare(data.share);
+      setIsClaimed(Boolean(data.isClaimed));
       if (data.downloadToken) {
         setDownloadToken(data.downloadToken);
       }
@@ -80,6 +85,33 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
       setError(err.message || 'Error fetching transfer');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClaimToggle = async () => {
+    const token = localStorage.getItem('qr_token');
+    if (!token) {
+      alert(t.loginToClaimTransfer || 'Please sign in with Google to save this transfer to your history.');
+      return;
+    }
+
+    setClaimLoading(true);
+    try {
+      const endpoint = isClaimed ? `/api/shares/${code}/unclaim` : `/api/shares/${code}/claim`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsClaimed(Boolean(data.isClaimed));
+      }
+    } catch (e) {
+      console.warn('Claim toggle error:', e);
+    } finally {
+      setClaimLoading(false);
     }
   };
 
@@ -211,17 +243,43 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
             )}
           </div>
 
-          {/* Action buttons (Download All & Show QR) */}
+          {/* Action buttons (Download All, Claim to History & Show QR) */}
           <div className="flex flex-wrap items-center gap-2.5">
             {share.qrDataUrl && onShowQR && (
               <button
+                type="button"
                 onClick={() => onShowQR(share)}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
               >
                 <QrCode className="w-4 h-4 text-teal-400" />
                 <span>QR Code</span>
               </button>
             )}
+
+            {/* Claim / Save to My History Button */}
+            <button
+              type="button"
+              onClick={handleClaimToggle}
+              disabled={claimLoading}
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                isClaimed
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
+                  : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-750 hover:border-teal-500'
+              }`}
+              title={isClaimed ? (t.unclaimTransferTip || "Click to remove from your history") : (t.claimTransferTip || "Save this transfer to your permanent history")}
+            >
+              {isClaimed ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>{t.claimedBadge || 'Saved in History'}</span>
+                </>
+              ) : (
+                <>
+                  <BookmarkPlus className="w-4 h-4 text-teal-400" />
+                  <span>{t.claimTransferBtn || 'Claim & Save to History'}</span>
+                </>
+              )}
+            </button>
 
             <a
               href={`/api/shares/${share.code}/download-all${downloadToken ? '?token=' + downloadToken : ''}`}
@@ -233,6 +291,7 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
             </a>
           </div>
         </div>
+
 
         {/* Metadata stats bar */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-3 border-t border-slate-800/80">

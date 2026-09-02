@@ -384,9 +384,25 @@ router.post('/:code/claim', requireAuth, (req, res) => {
       db.updateShare(code, { claimedByUserIds: claimed });
     }
 
-    return res.json({ success: true, message: 'Transfer saved to your history.' });
+    return res.json({ success: true, isClaimed: true, message: 'Transfer saved to your history.' });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to claim transfer.' });
+  }
+});
+
+// Explicitly unclaim / remove transfer from user's history
+router.post('/:code/unclaim', requireAuth, (req, res) => {
+  try {
+    const { code } = req.params;
+    const share = db.findShareByCode(code);
+    if (!share) return res.status(404).json({ error: 'Transfer not found.' });
+
+    const claimed = (share.claimedByUserIds || []).filter((id) => id !== req.user.id);
+    db.updateShare(code, { claimedByUserIds: claimed });
+
+    return res.json({ success: true, isClaimed: false, message: 'Transfer removed from your history.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to remove from history.' });
   }
 });
 
@@ -479,23 +495,16 @@ router.get('/:code', optionalAuth, codeLookupLimiter, async (req, res) => {
       }
     }
 
-    // If logged-in user is claiming/viewing someone else's share, automatically record to their history
-    if (req.user && req.user.id !== share.userId) {
-      const claimed = share.claimedByUserIds || [];
-      if (!claimed.includes(req.user.id)) {
-        claimed.push(req.user.id);
-        db.updateShare(code, { claimedByUserIds: claimed });
-      }
-    }
-
+    const isClaimed = req.user ? (share.claimedByUserIds || []).includes(req.user.id) : false;
     const { passwordHash: _, ...safeShare } = share;
     const downloadToken = generateDownloadToken(share.code, share.passwordHash || 'public');
-    return res.json({ share: safeShare, downloadToken });
+    return res.json({ share: safeShare, downloadToken, isClaimed });
   } catch (err) {
     console.error('Get share error:', err);
     return res.status(500).json({ error: 'Failed to retrieve transfer.' });
   }
 });
+
 
 
 // Stream / Preview Image or File (supports HTTP 206 Range requests for videos)
