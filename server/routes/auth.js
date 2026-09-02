@@ -1,12 +1,33 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db.js';
 import { requireAuth, generateToken } from '../middleware/auth.js';
+import { logSecurityEvent } from '../utils/logger.js';
 
 const router = express.Router();
 
+// Strict Auth Rate Limiter (20 login requests / 15 minutes)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please try again later.' },
+  handler: (req, res, next, options) => {
+    logSecurityEvent({
+      type: 'auth_rate_limit',
+      ip: req.ip,
+      endpoint: req.originalUrl,
+      details: 'Auth rate limit exceeded',
+    });
+    res.status(429).json(options.message);
+  }
+});
+
 // Google Sign-In Endpoint
-router.post('/google', async (req, res) => {
+router.post('/google', authLimiter, async (req, res) => {
+
   try {
     const { googleId, email, name, picture, credential } = req.body;
 

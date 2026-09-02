@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -10,16 +11,33 @@ import AdmZip from 'adm-zip';
 import { db } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { getLocalIpAddress } from '../utils/network.js';
-import { RESTRICTED_EXTENSIONS, getRestrictedExtension } from './shares.js';
 import { sendIncomingTransferNotification } from '../utils/mailer.js';
+import {
+  isRestrictedExtension,
+  sanitizeFilename,
+  safeResolveUploadPath,
+  inspectFileHeader,
+  generateSecretToken,
+} from '../utils/security.js';
+import { logSecurityEvent } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+const isVercel = Boolean(process.env.VERCEL);
+const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// Rate Limiter for uploading into inbox (30 uploads / 15 mins)
+const inboxUploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Upload rate limit reached. Please wait a moment.' },
+});
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -27,15 +45,20 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `inbox-${Date.now()}-${uuidv4().substring(0, 8)}${ext}`;
+    const rawExt = path.extname(file.originalname).toLowerCase();
+    const safeExt = /^[a-zA-Z0-9_\.]+$/.test(rawExt) ? rawExt : '.bin';
+    const uniqueName = `inbox-${Date.now()}-${uuidv4().substring(0, 8)}${safeExt}`;
     cb(null, uniqueName);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB limit
+    files: 50,
+    fieldSize: 10 * 1024 * 1024,
+  },
 });
 
 const router = express.Router();
@@ -43,13 +66,13 @@ const router = express.Router();
 function cleanupFiles(files) {
   if (!files || !Array.isArray(files)) return;
   for (const file of files) {
-    const filePath = path.join(uploadsDir, file.filename);
-    if (fs.existsSync(filePath)) {
-      try {
+    try {
+      const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+      if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-      } catch (err) {
-        console.warn('Failed to cleanup file:', file.filename);
       }
+    } catch {
+      // Ignore cleanup error
     }
   }
 }
@@ -92,8 +115,11 @@ router.post('/create', requireAuth, async (req, res) => {
       },
     });
 
+    const secretToken = generateSecretToken();
+
     const inbox = {
       id: inboxId,
+      secretToken,
       userId,
       userEmail,
       hostName,
@@ -102,18 +128,19 @@ router.post('/create', requireAuth, async (req, res) => {
       status: 'waiting',
       pendingTransfers: [],
       createdAt: new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
     };
 
     db.createInbox(inbox);
 
     return res.status(201).json({ inbox });
   } catch (err) {
-    console.error('Inbox create error:', err);
-    return res.status(500).json({ error: 'Failed to create personal receive QR.' });
+    console.error('Create inbox error:', err);
+    return res.status(500).json({ error: 'Failed to create personal receive inbox.' });
   }
 });
 
-// 2. Get Inbox Info
+// 2. Get Inbox info for Sender
 router.get('/:inboxId', (req, res) => {
   try {
     const { inboxId } = req.params;
@@ -121,14 +148,15 @@ router.get('/:inboxId', (req, res) => {
     if (!inbox) {
       return res.status(404).json({ error: 'Personal receive inbox not found or has expired.' });
     }
-    return res.json({ inbox });
+    const { secretToken: _, ...safeInbox } = inbox;
+    return res.json({ inbox: safeInbox });
   } catch (err) {
     return res.status(500).json({ error: 'Error fetching inbox.' });
   }
 });
 
 // 3. Sender uploads files into Host's Inbox
-router.post('/:inboxId/upload', upload.array('files', 100), async (req, res) => {
+router.post('/:inboxId/upload', inboxUploadLimiter, upload.array('files', 50), async (req, res) => {
   try {
     const { inboxId } = req.params;
     const inbox = db.findInboxById(inboxId);
@@ -141,29 +169,57 @@ router.post('/:inboxId/upload', upload.array('files', 100), async (req, res) => 
       return res.status(400).json({ error: 'Please select at least one photo or file to send.' });
     }
 
-    // Validate restricted extensions
+    // Validate restricted extensions and deep binary header inspection
     for (const file of req.files) {
-      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-      const restrictedExt = getRestrictedExtension(originalName);
-      if (restrictedExt) {
+      const rawName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      const cleanOriginalName = sanitizeFilename(rawName);
+
+      if (isRestrictedExtension(cleanOriginalName)) {
         cleanupFiles(req.files);
+        logSecurityEvent({
+          type: 'malware_blocked',
+          ip: req.ip,
+          endpoint: `/api/inbox/${inboxId}/upload`,
+          details: `Blocked restricted extension: ${cleanOriginalName}`,
+        });
         return res.status(400).json({
-          error: `Security Alert: File "${originalName}" is restricted (${restrictedExt}). Executables, scripts, and archives are prohibited.`
+          error: `Security Alert: File "${cleanOriginalName}" is prohibited for security reasons.`
+        });
+      }
+
+      const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+
+      // Deep binary header check for executable binaries and active scripts
+      const headerCheck = inspectFileHeader(filePath, cleanOriginalName);
+      if (!headerCheck.isSafe) {
+        cleanupFiles(req.files);
+        logSecurityEvent({
+          type: 'malware_blocked',
+          ip: req.ip,
+          endpoint: `/api/inbox/${inboxId}/upload`,
+          details: `Binary inspection failed: ${headerCheck.reason} for file ${cleanOriginalName}`,
+        });
+        return res.status(400).json({
+          error: `Security Alert: ${headerCheck.reason}. Upload rejected.`
         });
       }
 
       // Check inside ZIP
-      if (originalName.toLowerCase().endsWith('.zip')) {
-        const filePath = path.join(uploadsDir, file.filename);
+      if (cleanOriginalName.toLowerCase().endsWith('.zip')) {
         try {
           const zip = new AdmZip(filePath);
           for (const entry of zip.getEntries()) {
             if (entry.isDirectory) continue;
-            const innerRestricted = getRestrictedExtension(entry.entryName);
-            if (innerRestricted) {
+            if (isRestrictedExtension(entry.entryName)) {
               cleanupFiles(req.files);
+              logSecurityEvent({
+                type: 'malware_blocked',
+                ip: req.ip,
+                endpoint: `/api/inbox/${inboxId}/upload`,
+                details: `Blocked archive containing: ${entry.entryName}`,
+              });
               return res.status(400).json({
-                error: `Security Alert: ZIP archive contains restricted file "${entry.entryName}" (${innerRestricted}).`
+                error: `Security Alert: ZIP archive contains prohibited file "${entry.entryName}". Upload rejected.`
               });
             }
           }
@@ -298,13 +354,15 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
 
     if (!targetFile) return res.status(404).send('File not found');
 
-    const filePath = path.join(uploadsDir, targetFile.filename);
+    const filePath = safeResolveUploadPath(uploadsDir, targetFile.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).send('File missing from disk');
     }
 
     const stat = fs.statSync(filePath);
     const range = req.headers.range;
+
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
     if (range && (targetFile.mimetype?.startsWith('video/') || targetFile.mimetype?.startsWith('audio/'))) {
@@ -318,6 +376,7 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': targetFile.mimetype || 'video/mp4',
+        'X-Content-Type-Options': 'nosniff',
       });
       return stream.pipe(res);
     }
@@ -397,10 +456,16 @@ router.get('/:inboxId/download/:transferId', (req, res) => {
     const transfer = (inbox.pendingTransfers || []).find((t) => t.transferId === transferId);
     if (!transfer) return res.status(404).send('Transfer not found');
 
+    if (transfer.status !== 'accepted') {
+      return res.status(403).send('Transfer must be accepted by host before download');
+    }
+
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
     // If single file, download directly
     if (transfer.files.length === 1) {
       const file = transfer.files[0];
-      const filePath = path.join(uploadsDir, file.filename);
+      const filePath = safeResolveUploadPath(uploadsDir, file.filename);
       if (!fs.existsSync(filePath)) return res.status(404).send('File missing');
 
       res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
@@ -410,7 +475,8 @@ router.get('/:inboxId/download/:transferId', (req, res) => {
 
     // If multiple files, stream as ZIP
     const archive = archiver('zip', { zlib: { level: 6 } });
-    const zipName = `${(transfer.title || 'Received_Files').replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
+    const safeTitle = sanitizeFilename(transfer.title || 'Received_Files').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const zipName = `${safeTitle}.zip`;
 
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(zipName)}"`);
@@ -418,9 +484,13 @@ router.get('/:inboxId/download/:transferId', (req, res) => {
     archive.pipe(res);
 
     transfer.files.forEach((file) => {
-      const filePath = path.join(uploadsDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: file.originalName });
+      try {
+        const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+        if (fs.existsSync(filePath)) {
+          archive.file(filePath, { name: file.originalName });
+        }
+      } catch {
+        // Skip inaccessible file
       }
     });
 
@@ -430,5 +500,6 @@ router.get('/:inboxId/download/:transferId', (req, res) => {
     return res.status(500).send('Error downloading files');
   }
 });
+
 
 export default router;

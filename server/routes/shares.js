@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -11,36 +12,52 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
 import { optionalAuth, requireAuth } from '../middleware/auth.js';
 import { getLocalIpAddress } from '../utils/network.js';
+import {
+  isRestrictedExtension,
+  sanitizeFilename,
+  safeResolveUploadPath,
+  inspectFileHeader,
+  generateSecretToken,
+  generateDownloadToken,
+  verifyDownloadToken,
+} from '../utils/security.js';
+import { logSecurityEvent } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+const isVercel = Boolean(process.env.VERCEL);
+const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Security: Blacklist of dangerous executables, scripts, and blocked archive formats
-export const RESTRICTED_EXTENSIONS = new Set([
-  '.exe', '.scr', '.com', '.bat', '.cmd', '.ps1', '.psm1', '.psd1',
-  '.vbs', '.vbe', '.js', '.jse', '.wsf', '.wsh', '.msi', '.msp',
-  '.dll', '.sys', '.cpl', '.reg', '.hta', '.lnk', '.url', '.jar',
-  '.rar', '.7z', '.iso', '.img', '.tar', '.gz', '.tgz', '.bz2', '.xz'
-]);
-
-/**
- * Check if a filename ends with any restricted extension
- */
-export function getRestrictedExtension(filename) {
-  if (!filename) return null;
-  const lower = filename.toLowerCase().trim();
-  for (const ext of RESTRICTED_EXTENSIONS) {
-    if (lower === ext || lower.endsWith(ext)) {
-      return ext;
-    }
+// Rate Limiter for uploading shares (30 uploads / 15 mins)
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Upload limit reached. Please wait before uploading more files.' },
+  handler: (req, res, next, options) => {
+    logSecurityEvent({
+      type: 'rate_limit',
+      ip: req.ip,
+      endpoint: req.originalUrl,
+      details: 'Upload rate limit exceeded',
+    });
+    res.status(429).json(options.message);
   }
-  return null;
-}
+});
+
+// Rate Limiter for code lookups & password verification (prevents brute-force)
+const codeLookupLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many lookup attempts. Please wait a moment.' },
+});
 
 /**
  * Helper to cleanup uploaded disk files if validation fails
@@ -48,32 +65,37 @@ export function getRestrictedExtension(filename) {
 function cleanupFiles(files) {
   if (!files || !Array.isArray(files)) return;
   for (const file of files) {
-    const filePath = path.join(uploadsDir, file.filename);
-    if (fs.existsSync(filePath)) {
-      try {
+    try {
+      const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+      if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-      } catch (err) {
-        console.warn('Failed to cleanup file:', file.filename);
       }
+    } catch {
+      // Ignore cleanup error
     }
   }
 }
 
-// Configure multer storage
+// Configure multer storage with sanitized names and limits
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${uuidv4().substring(0, 8)}${ext}`;
+    const rawExt = path.extname(file.originalname).toLowerCase();
+    const safeExt = /^[a-zA-Z0-9_\.]+$/.test(rawExt) ? rawExt : '.bin';
+    const uniqueName = `${Date.now()}-${uuidv4().substring(0, 8)}${safeExt}`;
     cb(null, uniqueName);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB per file
+    files: 50, // max 50 files per upload batch
+    fieldSize: 10 * 1024 * 1024, // 10MB text fields
+  },
 });
 
 const router = express.Router();
@@ -89,44 +111,73 @@ function generateTransferCode() {
 }
 
 // Upload photos / files and create share QR (Requires Google Login)
-router.post('/upload', requireAuth, upload.array('files', 100), async (req, res) => {
+router.post('/upload', requireAuth, uploadLimiter, upload.array('files', 50), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'Please select at least one file or photo to upload.' });
     }
 
-    // 1. Validate all direct uploaded file extensions
+    // 1. Validate all direct uploaded file extensions & inspect binary magic bytes
     for (const file of req.files) {
-      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-      const restrictedExt = getRestrictedExtension(originalName);
-      if (restrictedExt) {
+      const rawName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      const cleanOriginalName = sanitizeFilename(rawName);
+
+      if (isRestrictedExtension(cleanOriginalName)) {
         cleanupFiles(req.files);
+        logSecurityEvent({
+          type: 'malware_blocked',
+          ip: req.ip,
+          endpoint: '/api/shares/upload',
+          details: `Blocked restricted extension: ${cleanOriginalName}`,
+        });
         return res.status(400).json({
-          error: `Security Alert: File "${originalName}" is not allowed (${restrictedExt}). Executable files, dangerous scripts, and restricted archives are prohibited.`
+          error: `Security Alert: File "${cleanOriginalName}" is prohibited for security reasons.`
+        });
+      }
+
+      const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+
+      // Deep binary header inspection for executable signatures and malicious scripts
+      const headerCheck = inspectFileHeader(filePath, cleanOriginalName);
+      if (!headerCheck.isSafe) {
+        cleanupFiles(req.files);
+        logSecurityEvent({
+          type: 'malware_blocked',
+          ip: req.ip,
+          endpoint: '/api/shares/upload',
+          details: `Binary inspection failed: ${headerCheck.reason} for file ${cleanOriginalName}`,
+        });
+        return res.status(400).json({
+          error: `Security Alert: ${headerCheck.reason}. Upload rejected.`
         });
       }
 
       // 2. If it is a ZIP archive, inspect its contents entry-by-entry
-      if (originalName.toLowerCase().endsWith('.zip')) {
-        const filePath = path.join(uploadsDir, file.filename);
+      if (cleanOriginalName.toLowerCase().endsWith('.zip')) {
         try {
           const zip = new AdmZip(filePath);
           const zipEntries = zip.getEntries();
           for (const entry of zipEntries) {
             if (entry.isDirectory) continue;
-            const innerRestricted = getRestrictedExtension(entry.entryName);
-            if (innerRestricted) {
+            if (isRestrictedExtension(entry.entryName)) {
               cleanupFiles(req.files);
+              logSecurityEvent({
+                type: 'malware_blocked',
+                ip: req.ip,
+                endpoint: '/api/shares/upload',
+                details: `Blocked archive containing: ${entry.entryName}`,
+              });
               return res.status(400).json({
-                error: `Security Alert: ZIP archive "${originalName}" contains a prohibited file "${entry.entryName}" (${innerRestricted}). Upload cancelled.`
+                error: `Security Alert: ZIP archive "${cleanOriginalName}" contains a prohibited file "${entry.entryName}". Upload rejected.`
               });
             }
           }
         } catch (zipErr) {
-          console.warn('Could not inspect zip file:', originalName, zipErr.message);
+          console.warn('Could not inspect zip file:', cleanOriginalName, zipErr.message);
         }
       }
     }
+
 
     const { title, note, expiryHours, password, folderName } = req.body;
 
@@ -195,9 +246,12 @@ router.post('/upload', requireAuth, upload.array('files', 100), async (req, res)
       },
     });
 
+    const secretToken = generateSecretToken();
+
     const newShare = {
       id: uuidv4(),
       code: code.toUpperCase(),
+      secretToken,
       userId: req.user ? req.user.id : null,
       senderName: req.user ? req.user.name : (req.body.senderName || 'Anonymous'),
       title: finalTitle,
@@ -216,10 +270,12 @@ router.post('/upload', requireAuth, upload.array('files', 100), async (req, res)
     db.createShare(newShare);
 
     const { passwordHash: _, ...safeShare } = newShare;
+    const downloadToken = generateDownloadToken(newShare.code, passwordHash || 'public');
 
     return res.status(201).json({
       message: 'Files uploaded successfully!',
       share: safeShare,
+      downloadToken,
     });
   } catch (err) {
     console.error('Upload error:', err);
@@ -227,6 +283,23 @@ router.post('/upload', requireAuth, upload.array('files', 100), async (req, res)
     return res.status(500).json({ error: 'Failed to upload files.' });
   }
 });
+
+// Helper for download/preview authorization
+async function verifyShareAccess(req, share) {
+  if (!share.isPasswordProtected) return true;
+  const token = req.query.token || req.headers['x-download-token'];
+  const password = req.query.password || req.body?.password;
+
+  if (token && verifyDownloadToken(share.code, token, share.passwordHash)) {
+    return true;
+  }
+
+  if (password && (await bcrypt.compare(password, share.passwordHash))) {
+    return true;
+  }
+
+  return false;
+}
 
 // Get user's transfer history
 router.get('/my-shares', requireAuth, (req, res) => {
@@ -239,11 +312,48 @@ router.get('/my-shares', requireAuth, (req, res) => {
   }
 });
 
-// Get Share details by Code (with password verification if needed)
-router.get('/:code', async (req, res) => {
+// Unlock password-protected share and receive a signed download token
+router.post('/:code/unlock', codeLookupLimiter, async (req, res) => {
   try {
     const { code } = req.params;
-    const { password } = req.query;
+    const { password } = req.body;
+    const share = db.findShareByCode(code);
+    if (!share) return res.status(404).json({ error: 'Transfer not found.' });
+
+    if (!share.isPasswordProtected) {
+      const { passwordHash: _, ...safeShare } = share;
+      const downloadToken = generateDownloadToken(share.code, 'public');
+      return res.json({ success: true, share: safeShare, downloadToken });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to unlock this transfer.' });
+    }
+
+    const match = await bcrypt.compare(password, share.passwordHash);
+    if (!match) {
+      logSecurityEvent({
+        type: 'auth_failure',
+        ip: req.ip,
+        endpoint: `/api/shares/${code}/unlock`,
+        details: 'Incorrect share unlock password attempt',
+      });
+      return res.status(403).json({ error: 'Incorrect password.' });
+    }
+
+    const downloadToken = generateDownloadToken(share.code, share.passwordHash);
+    const { passwordHash: _, ...safeShare } = share;
+    return res.json({ success: true, share: safeShare, downloadToken });
+  } catch (err) {
+    return res.status(500).json({ error: 'Unlock verification failed.' });
+  }
+});
+
+// Get Share details by Code (with password verification if needed)
+router.get('/:code', codeLookupLimiter, async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { password, token } = req.query;
 
     const share = db.findShareByCode(code);
     if (!share) {
@@ -257,18 +367,28 @@ router.get('/:code', async (req, res) => {
 
     // Check if files still exist on disk (prevents phantom transfers after server wipes)
     const existingFiles = (share.files || []).filter((f) => {
-      const filePath = path.join(uploadsDir, f.filename);
-      return fs.existsSync(filePath);
+      try {
+        const filePath = safeResolveUploadPath(uploadsDir, f.filename);
+        return fs.existsSync(filePath);
+      } catch {
+        return false;
+      }
     });
 
     if (existingFiles.length === 0 && share.files && share.files.length > 0) {
       return res.status(404).json({ error: 'This transfer has expired or the files are no longer available on the server.' });
     }
 
-
     // Check password protection
     if (share.isPasswordProtected) {
-      if (!password) {
+      let authorized = false;
+      if (token && verifyDownloadToken(share.code, token, share.passwordHash)) {
+        authorized = true;
+      } else if (password) {
+        authorized = await bcrypt.compare(password, share.passwordHash);
+      }
+
+      if (!authorized) {
         return res.status(401).json({
           isPasswordProtected: true,
           title: share.title,
@@ -279,15 +399,11 @@ router.get('/:code', async (req, res) => {
           message: 'Password required to access these files.',
         });
       }
-
-      const match = await bcrypt.compare(password, share.passwordHash);
-      if (!match) {
-        return res.status(403).json({ error: 'Incorrect password.' });
-      }
     }
 
     const { passwordHash: _, ...safeShare } = share;
-    return res.json({ share: safeShare });
+    const downloadToken = generateDownloadToken(share.code, share.passwordHash || 'public');
+    return res.json({ share: safeShare, downloadToken });
   } catch (err) {
     console.error('Get share error:', err);
     return res.status(500).json({ error: 'Failed to retrieve transfer.' });
@@ -295,22 +411,29 @@ router.get('/:code', async (req, res) => {
 });
 
 // Stream / Preview Image or File (supports HTTP 206 Range requests for videos)
-router.get('/:code/preview/:fileId', (req, res) => {
+router.get('/:code/preview/:fileId', async (req, res) => {
   try {
     const { code, fileId } = req.params;
     const share = db.findShareByCode(code);
     if (!share) return res.status(404).send('Not found');
 
+    const hasAccess = await verifyShareAccess(req, share);
+    if (!hasAccess) {
+      return res.status(401).send('Unauthorized: Password or valid download token required');
+    }
+
     const file = share.files.find((f) => f.id === fileId);
     if (!file) return res.status(404).send('File not found');
 
-    const filePath = path.join(uploadsDir, file.filename);
+    const filePath = safeResolveUploadPath(uploadsDir, file.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).send('File missing from disk');
     }
 
     const stat = fs.statSync(filePath);
     const range = req.headers.range;
+
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
     if (range && (file.mimetype?.startsWith('video/') || file.mimetype?.startsWith('audio/'))) {
@@ -324,6 +447,7 @@ router.get('/:code/preview/:fileId', (req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': file.mimetype || 'video/mp4',
+        'X-Content-Type-Options': 'nosniff',
       });
       return stream.pipe(res);
     }
@@ -339,7 +463,7 @@ router.get('/:code/preview/:fileId', (req, res) => {
 });
 
 // Download Single File
-router.get('/:code/download/:fileId', (req, res) => {
+router.get('/:code/download/:fileId', async (req, res) => {
   try {
     const { code, fileId } = req.params;
     const share = db.findShareByCode(code);
@@ -349,16 +473,22 @@ router.get('/:code/download/:fileId', (req, res) => {
       return res.status(410).send('Transfer has expired');
     }
 
+    const hasAccess = await verifyShareAccess(req, share);
+    if (!hasAccess) {
+      return res.status(401).send('Unauthorized: Password or valid download token required');
+    }
+
     const file = share.files.find((f) => f.id === fileId);
     if (!file) return res.status(404).send('File not found');
 
-    const filePath = path.join(uploadsDir, file.filename);
+    const filePath = safeResolveUploadPath(uploadsDir, file.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).send('File missing from server');
     }
 
     db.incrementDownloadCount(code);
 
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
     return fs.createReadStream(filePath).pipe(res);
@@ -369,7 +499,7 @@ router.get('/:code/download/:fileId', (req, res) => {
 });
 
 // Download All Files as ZIP
-router.get('/:code/download-all', (req, res) => {
+router.get('/:code/download-all', async (req, res) => {
   try {
     const { code } = req.params;
     const share = db.findShareByCode(code);
@@ -379,23 +509,34 @@ router.get('/:code/download-all', (req, res) => {
       return res.status(410).send('Transfer has expired');
     }
 
+    const hasAccess = await verifyShareAccess(req, share);
+    if (!hasAccess) {
+      return res.status(401).send('Unauthorized: Password or valid download token required');
+    }
+
     db.incrementDownloadCount(code);
 
     const archive = archiver('zip', {
       zlib: { level: 6 },
     });
 
-    const zipFilename = `${share.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_${share.code}.zip`;
+    const safeTitle = sanitizeFilename(share.title).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const zipFilename = `${safeTitle}_${share.code}.zip`;
 
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(zipFilename)}"`);
 
     archive.pipe(res);
 
     share.files.forEach((file) => {
-      const filePath = path.join(uploadsDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: file.originalName });
+      try {
+        const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+        if (fs.existsSync(filePath)) {
+          archive.file(filePath, { name: file.originalName });
+        }
+      } catch {
+        // Skip inaccessible file
       }
     });
 
@@ -405,6 +546,7 @@ router.get('/:code/download-all', (req, res) => {
     return res.status(500).send('Error generating ZIP download');
   }
 });
+
 
 // Delete Transfer (Owner or Creator)
 router.delete('/:code', requireAuth, (req, res) => {

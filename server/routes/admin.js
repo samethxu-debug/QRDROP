@@ -4,10 +4,13 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { db } from '../db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { getRecentSecurityLogs, getSecurityStats } from '../utils/logger.js';
+import { safeResolveUploadPath } from '../utils/security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+const isVercel = Boolean(process.env.VERCEL);
+const uploadsDir = isVercel ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
 
 const router = express.Router();
 
@@ -80,12 +83,12 @@ router.delete('/users/:userId', (req, res) => {
     const userShares = db.findSharesByUserId(userId);
     for (const share of userShares) {
       for (const file of share.files || []) {
-        const filePath = path.join(uploadsDir, file.filename);
-        if (fs.existsSync(filePath)) {
-          try {
+        try {
+          const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+          if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-          } catch (e) {}
-        }
+          }
+        } catch (e) {}
       }
       db.deleteShare(share.code);
     }
@@ -118,18 +121,29 @@ router.delete('/shares/:code', (req, res) => {
     }
 
     for (const file of share.files || []) {
-      const filePath = path.join(uploadsDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        try {
+      try {
+        const filePath = safeResolveUploadPath(uploadsDir, file.filename);
+        if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
     }
 
     db.deleteShare(code);
     return res.json({ message: 'Transfer deleted by admin.' });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to delete transfer.' });
+  }
+});
+
+// 7. Get Recent Security Logs & Incidents (Monitoring)
+router.get('/security-logs', (req, res) => {
+  try {
+    const logs = getRecentSecurityLogs(50);
+    const stats = getSecurityStats();
+    return res.json({ logs, stats });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to retrieve security logs.' });
   }
 });
 

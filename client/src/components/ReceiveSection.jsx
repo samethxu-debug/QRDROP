@@ -25,24 +25,32 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
   const [error, setError] = useState('');
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
+  const [downloadToken, setDownloadToken] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
-  const fetchShare = async (pwd = '') => {
+  const fetchShare = async (unlockPassword = null) => {
     setLoading(true);
     setError('');
     setPasswordError('');
     try {
-      const url = pwd 
-        ? `/api/shares/${code}?password=${encodeURIComponent(pwd)}`
-        : `/api/shares/${code}`;
+      let url = `/api/shares/${code}`;
+      if (unlockPassword) {
+        url += `?password=${encodeURIComponent(unlockPassword)}`;
+      }
 
       const res = await fetch(url);
       const data = await res.json();
 
       if (res.status === 401 && data.isPasswordProtected) {
         setIsPasswordRequired(true);
-        setShare(data); // partial info
+        setShare({
+          title: data.title,
+          senderName: data.senderName,
+          code: data.code,
+          fileCount: data.fileCount,
+          totalSize: data.totalSize,
+        });
         setLoading(false);
         return;
       }
@@ -57,6 +65,9 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
       }
 
       setShare(data.share);
+      if (data.downloadToken) {
+        setDownloadToken(data.downloadToken);
+      }
       setIsPasswordRequired(false);
     } catch (err) {
       setError(err.message || 'Error fetching transfer');
@@ -206,9 +217,9 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
             )}
 
             <a
-              href={`/api/shares/${share.code}/download-all`}
+              href={`/api/shares/${share.code}/download-all${downloadToken ? '?token=' + downloadToken : ''}`}
               download
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 text-xs font-extrabold shadow-lg shadow-teal-500/20 transition"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 text-xs font-extrabold shadow-lg shadow-teal-500/20 transition cursor-pointer"
             >
               <Archive className="w-4 h-4" />
               <span>{t.downloadAllZip}</span>
@@ -252,7 +263,7 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
               >
                 <ImageIcon className="w-8 h-8 text-teal-400/40 absolute pointer-events-none" />
                 <img
-                  src={`/api/shares/${share.code}/preview/${img.id}`}
+                  src={`/api/shares/${share.code}/preview/${img.id}${downloadToken ? '?token=' + downloadToken : ''}`}
                   alt={img.originalName}
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300 relative z-10"
                   loading="lazy"
@@ -262,7 +273,6 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
                   }}
                 />
 
-                
                 {/* Hover overlay with action buttons */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-between">
                   <div className="self-end">
@@ -309,9 +319,9 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
               </div>
 
               <a
-                href={`/api/shares/${share.code}/download/${file.id}`}
+                href={`/api/shares/${share.code}/download/${file.id}${downloadToken ? '?token=' + downloadToken : ''}`}
                 download
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-teal-500 hover:text-slate-950 text-slate-200 text-xs font-bold border border-slate-700 transition"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-teal-500 hover:text-slate-950 text-slate-200 text-xs font-bold border border-slate-700 transition cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>{t.downloadSingle}</span>
@@ -329,8 +339,11 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
         onClose={() => setLightboxIndex(-1)}
         onNavigate={(newIdx) => setLightboxIndex(newIdx)}
         shareCode={share.code}
+        customPreviewUrl={(file) => `/api/shares/${share.code}/preview/${file.id}${downloadToken ? '?token=' + downloadToken : ''}`}
+        customDownloadUrl={(file) => `/api/shares/${share.code}/download/${file.id}${downloadToken ? '?token=' + downloadToken : ''}`}
         t={t}
       />
+
 
 
     </div>
