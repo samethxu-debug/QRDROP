@@ -247,7 +247,7 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
             {imageFiles.map((img, idx) => (
               <div 
                 key={img.id}
-                className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-teal-500/50 transition cursor-pointer"
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500/50 transition cursor-pointer"
                 onClick={() => setLightboxIndex(idx)}
               >
                 <img
@@ -255,6 +255,10 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
                   alt={img.originalName}
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                   loading="lazy"
+                  onError={(e) => {
+                    // If preview fails, show a clean background fallback
+                    e.target.style.opacity = '0';
+                  }}
                 />
                 
                 {/* Hover overlay with action buttons */}
@@ -323,7 +327,9 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
         onClose={() => setLightboxIndex(-1)}
         onNavigate={(newIdx) => setLightboxIndex(newIdx)}
         shareCode={share.code}
+        t={t}
       />
+
 
     </div>
   );

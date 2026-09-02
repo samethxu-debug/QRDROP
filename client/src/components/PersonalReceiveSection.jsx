@@ -435,12 +435,15 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                       <div
                         key={img.id}
                         onClick={() => setLightboxIndex(idx)}
-                        className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 hover:border-teal-500 cursor-pointer transition"
+                        className="group relative aspect-square rounded-2xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500 cursor-pointer transition"
                       >
                         <img
                           src={`/api/inbox/${inbox.id}/preview/${img.id}`}
                           alt={img.originalName}
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                          onError={(e) => {
+                            e.target.style.opacity = '0';
+                          }}
                         />
                         <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-teal-300">
                           <Eye className="w-4 h-4" />
@@ -521,8 +524,10 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
           onNavigate={(newIdx) => setLightboxIndex(newIdx)}
           shareCode={inbox?.id}
           customPreviewUrl={(img) => `/api/inbox/${inbox.id}/preview/${img.id}`}
+          t={t}
         />
       )}
+
 
     </div>
   );

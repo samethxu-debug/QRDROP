@@ -407,7 +407,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
               {previews.length > 0 && (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
                   {previews.map((p, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-800 group bg-slate-950">
+                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-800 group bg-transparency-grid">
                       <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                     </div>
                   ))}

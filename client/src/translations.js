@@ -159,7 +159,18 @@ export const translations = {
     usersTab: "គ្រប់គ្រងអ្នកប្រើប្រាស់",
     sharesTab: "ឯកសារផ្ញើទាំងអស់",
     refresh: "ផ្ទុកឡើងវិញ",
+
+    // Image Lightbox & Previews
+    previewBgCheckerboard: "ផ្ទៃក្រឡាចត្រង្គ (ថ្លា)",
+    previewBgDark: "ផ្ទៃងងឹត",
+    previewBgLight: "ផ្ទៃពណ៌ស",
+    toggleBgTip: "ប្តូរផ្ទៃខាងក្រោយ (សម្រាប់រូបភាពថ្លា PNG)",
+    unsupportedImagePreview: "Browser មិនអាចបង្ហាញទម្រង់រូបភាពនេះដោយផ្ទាល់បានទេ (ដូចជា .HEIC/.RAW)។ សូមទាញយកដើម្បីបើកមើលរូបដើម។",
+    downloadToView: "ទាញយករូបភាពដើម",
+    imageLoading: "កំពុងដំណើរការរូបភាព...",
+    imageLoadError: "មិនអាចបង្ហាញរូបភាពនេះបានទេ",
   },
+
   en: {
     appName: "QR Drop",
     appTagline: "Instant photo & file transfer via fast QR Code scanning",
@@ -320,5 +331,16 @@ export const translations = {
     usersTab: "Users Management",
     sharesTab: "Live Shares",
     refresh: "Refresh Data",
+
+    // Image Lightbox & Previews
+    previewBgCheckerboard: "Checkerboard (Transparent)",
+    previewBgDark: "Dark Background",
+    previewBgLight: "Light Background",
+    toggleBgTip: "Toggle background backdrop (useful for transparent PNGs)",
+    unsupportedImagePreview: "Browser preview is not available for this format (e.g. .HEIC/.RAW). Please download to view the full resolution photo.",
+    downloadToView: "Download Original Image",
+    imageLoading: "Loading image...",
+    imageLoadError: "Unable to display this image preview",
   }
 };
+
