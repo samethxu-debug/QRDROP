@@ -74,6 +74,7 @@ export default function ImageLightbox({
 
   // Check if filename might be an unsupported preview format (e.g. .heic, .raw, .tiff)
   const ext = (currentImage.originalName || '').toLowerCase();
+  const isVideo = currentImage.mimetype?.startsWith('video/') || ext.endsWith('.mp4') || ext.endsWith('.webm') || ext.endsWith('.mov') || ext.endsWith('.m4v') || ext.endsWith('.mkv');
   const isSpecialFormat = ext.endsWith('.heic') || ext.endsWith('.heif') || ext.endsWith('.raw') || ext.endsWith('.cr2') || ext.endsWith('.nef') || ext.endsWith('.tiff') || ext.endsWith('.tif') || ext.endsWith('.psd');
 
   return (
@@ -93,39 +94,41 @@ export default function ImageLightbox({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Background Mode Switcher (Checkerboard / Light / Dark) */}
-          <button
-            type="button"
-            onClick={cycleBgMode}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition cursor-pointer"
-            title={t.toggleBgTip || "Toggle background backdrop (useful for transparent PNGs)"}
-          >
-            {bgMode === 'grid' && (
-              <>
-                <Grid className="w-3.5 h-3.5 text-teal-400" />
-                <span className="hidden sm:inline">{t.previewBgCheckerboard || "Checkerboard"}</span>
-              </>
-            )}
-            {bgMode === 'light' && (
-              <>
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">{t.previewBgLight || "Light"}</span>
-              </>
-            )}
-            {bgMode === 'dark' && (
-              <>
-                <Moon className="w-3.5 h-3.5 text-blue-400" />
-                <span className="hidden sm:inline">{t.previewBgDark || "Dark"}</span>
-              </>
-            )}
-          </button>
+          {/* Background Mode Switcher (Checkerboard / Light / Dark) - only for images */}
+          {!isVideo && (
+            <button
+              type="button"
+              onClick={cycleBgMode}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition cursor-pointer"
+              title={t.toggleBgTip || "Toggle background backdrop (useful for transparent PNGs)"}
+            >
+              {bgMode === 'grid' && (
+                <>
+                  <Grid className="w-3.5 h-3.5 text-teal-400" />
+                  <span className="hidden sm:inline">{t.previewBgCheckerboard || "Checkerboard"}</span>
+                </>
+              )}
+              {bgMode === 'light' && (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">{t.previewBgLight || "Light"}</span>
+                </>
+              )}
+              {bgMode === 'dark' && (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="hidden sm:inline">{t.previewBgDark || "Dark"}</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Download Button */}
           <a
             href={downloadUrl}
             download
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition cursor-pointer"
-            title="Download Original Image"
+            title="Download Original File"
           >
             <Download className="w-4 h-4 text-slate-950" />
             <span className="hidden sm:inline">{t.downloadSingle || "Download"}</span>
@@ -142,7 +145,7 @@ export default function ImageLightbox({
         </div>
       </div>
 
-      {/* Main Image Viewport */}
+      {/* Main Media Viewport */}
       <div 
         className="relative max-w-5xl max-h-[80vh] w-full p-4 flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
@@ -151,7 +154,7 @@ export default function ImageLightbox({
         {loading && !hasError && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 pointer-events-none">
             <RefreshCw className="w-8 h-8 text-teal-400 animate-spin" />
-            <p className="text-xs font-semibold text-slate-300">{t.imageLoading || "Loading image..."}</p>
+            <p className="text-xs font-semibold text-slate-300">{t.imageLoading || "Loading media..."}</p>
           </div>
         )}
 
@@ -179,6 +182,24 @@ export default function ImageLightbox({
               <Download className="w-4 h-4" />
               <span>{t.downloadToView || "Download Original File"}</span>
             </a>
+          </div>
+        ) : isVideo ? (
+          <div className="relative p-2 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 max-w-full max-h-[75vh] flex items-center justify-center bg-slate-950">
+            <video
+              key={previewUrl}
+              src={previewUrl}
+              controls
+              autoPlay
+              playsInline
+              onLoadedData={() => setLoading(false)}
+              onError={() => {
+                setLoading(false);
+                setHasError(true);
+              }}
+              className={`max-w-full max-h-[70vh] rounded-xl shadow-2xl transition duration-200 ${
+                loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+              }`}
+            />
           </div>
         ) : (
           <div className={`relative p-2 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 max-w-full max-h-[75vh] flex items-center justify-center ${getBackdropClass()}`}>

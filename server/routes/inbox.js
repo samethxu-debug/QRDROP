@@ -280,7 +280,7 @@ router.get('/:inboxId/status', (req, res) => {
   }
 });
 
-// 5. Host Previews Image from Pending Transfer
+// 5. Host Previews Image or Video from Pending Transfer (supports HTTP 206 Range for videos)
 router.get('/:inboxId/preview/:fileId', (req, res) => {
   try {
     const { inboxId, fileId } = req.params;
@@ -303,8 +303,29 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
       return res.status(404).send('File missing from disk');
     }
 
+    const stat = fs.statSync(filePath);
+    const range = req.headers.range;
+
+    // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
+    if (range && (targetFile.mimetype?.startsWith('video/') || targetFile.mimetype?.startsWith('audio/'))) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+      const chunksize = (end - start) + 1;
+      const stream = fs.createReadStream(filePath, { start, end });
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': targetFile.mimetype || 'video/mp4',
+      });
+      return stream.pipe(res);
+    }
+
     res.setHeader('Content-Type', targetFile.mimetype || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(targetFile.originalName)}"`);
+    res.setHeader('Content-Length', stat.size);
+    res.setHeader('Accept-Ranges', 'bytes');
     return fs.createReadStream(filePath).pipe(res);
   } catch (err) {
     return res.status(500).send('Error streaming file');
