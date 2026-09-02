@@ -145,3 +145,34 @@ export function verifyDownloadToken(shareCode, token, secretOrKey = 'qrdrop-secr
     return false;
   }
 }
+
+export function getSafeMimeType(filename, defaultMime = 'application/octet-stream') {
+  if (defaultMime && defaultMime !== 'application/octet-stream' && defaultMime.includes('/')) {
+    return defaultMime;
+  }
+  const ext = path.extname(filename || '').toLowerCase();
+  const mimeMap = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.bmp': 'image/bmp',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.m4v': 'video/x-m4v',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
+    '.pdf': 'application/pdf',
+    '.zip': 'application/zip',
+    '.txt': 'text/plain; charset=utf-8',
+    '.json': 'application/json',
+  };
+  return mimeMap[ext] || defaultMime || 'application/octet-stream';
+}
+
+

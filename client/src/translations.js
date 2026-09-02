@@ -181,7 +181,9 @@ export const translations = {
     downloadToView: "ទាញយករូបភាពដើម",
     imageLoading: "កំពុងដំណើរការរូបភាព...",
     imageLoadError: "មិនអាចបង្ហាញរូបភាពនេះបានទេ",
+    retryPreview: "ព្យាយាមមើលម្តងទៀត",
   },
+
 
   en: {
     appName: "QR Drop",
@@ -364,6 +366,8 @@ export const translations = {
     downloadToView: "Download Original Image",
     imageLoading: "Loading image...",
     imageLoadError: "Unable to display this image preview",
+    retryPreview: "Retry Preview",
   }
 };
+
 

@@ -18,7 +18,9 @@ import {
   safeResolveUploadPath,
   inspectFileHeader,
   generateSecretToken,
+  getSafeMimeType,
 } from '../utils/security.js';
+
 import { logSecurityEvent } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -359,13 +361,13 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
       return res.status(404).send('File missing from disk');
     }
 
-    const stat = fs.statSync(filePath);
-    const range = req.headers.range;
-
+    const safeMime = getSafeMimeType(targetFile.originalName, targetFile.mimetype);
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
 
     // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
-    if (range && (targetFile.mimetype?.startsWith('video/') || targetFile.mimetype?.startsWith('audio/'))) {
+    if (range && (safeMime.startsWith('video/') || safeMime.startsWith('audio/'))) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
@@ -375,13 +377,14 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
         'Content-Range': `bytes ${start}-${end}/${stat.size}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
-        'Content-Type': targetFile.mimetype || 'video/mp4',
+        'Content-Type': safeMime,
         'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'public, max-age=86400',
       });
       return stream.pipe(res);
     }
 
-    res.setHeader('Content-Type', targetFile.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Type', safeMime);
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(targetFile.originalName)}"`);
     res.setHeader('Content-Length', stat.size);
     res.setHeader('Accept-Ranges', 'bytes');
@@ -468,10 +471,12 @@ router.get('/:inboxId/download/:transferId', (req, res) => {
       const filePath = safeResolveUploadPath(uploadsDir, file.filename);
       if (!fs.existsSync(filePath)) return res.status(404).send('File missing');
 
-      res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+      const safeMime = getSafeMimeType(file.originalName, file.mimetype);
+      res.setHeader('Content-Type', safeMime);
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
       return fs.createReadStream(filePath).pipe(res);
     }
+
 
     // If multiple files, stream as ZIP
     const archive = archiver('zip', { zlib: { level: 6 } });

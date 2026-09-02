@@ -174,15 +174,30 @@ export default function ImageLightbox({
                 {currentImage.originalName}
               </p>
             </div>
-            <a
-              href={downloadUrl}
-              download
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 hover:opacity-95 transition"
-            >
-              <Download className="w-4 h-4" />
-              <span>{t.downloadToView || "Download Original File"}</span>
-            </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  setHasError(false);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold text-xs border border-slate-700 transition cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t.retryPreview || "Retry Preview"}</span>
+              </button>
+
+              <a
+                href={downloadUrl}
+                download
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 hover:opacity-95 transition cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-slate-950" />
+                <span>{t.downloadToView || "Download Original File"}</span>
+              </a>
+            </div>
           </div>
+
         ) : isVideo ? (
           <div className="relative p-2 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 max-w-full max-h-[75vh] flex items-center justify-center bg-slate-950">
             <video

@@ -20,7 +20,9 @@ import {
   generateSecretToken,
   generateDownloadToken,
   verifyDownloadToken,
+  getSafeMimeType,
 } from '../utils/security.js';
+
 import { logSecurityEvent } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -449,13 +451,13 @@ router.get('/:code/preview/:fileId', async (req, res) => {
       return res.status(404).send('File missing from disk');
     }
 
-    const stat = fs.statSync(filePath);
-    const range = req.headers.range;
-
+    const safeMime = getSafeMimeType(file.originalName, file.mimetype);
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
 
     // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
-    if (range && (file.mimetype?.startsWith('video/') || file.mimetype?.startsWith('audio/'))) {
+    if (range && (safeMime.startsWith('video/') || safeMime.startsWith('audio/'))) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
@@ -465,13 +467,14 @@ router.get('/:code/preview/:fileId', async (req, res) => {
         'Content-Range': `bytes ${start}-${end}/${stat.size}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
-        'Content-Type': file.mimetype || 'video/mp4',
+        'Content-Type': safeMime,
         'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'public, max-age=86400',
       });
       return stream.pipe(res);
     }
 
-    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Type', safeMime);
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.originalName)}"`);
     res.setHeader('Content-Length', stat.size);
     res.setHeader('Accept-Ranges', 'bytes');
@@ -507,10 +510,12 @@ router.get('/:code/download/:fileId', async (req, res) => {
 
     db.incrementDownloadCount(code);
 
+    const safeMime = getSafeMimeType(file.originalName, file.mimetype);
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Type', safeMime);
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
     return fs.createReadStream(filePath).pipe(res);
+
   } catch (err) {
     console.error('Download error:', err);
     return res.status(500).send('Error downloading file');
