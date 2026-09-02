@@ -25,9 +25,35 @@ const authLimiter = rateLimit({
   }
 });
 
+// Helper to reliably decode Google GIS JWT token payload (base64url)
+function decodeGoogleJwt(token) {
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    
+    // Method 1: Node.js base64url native decoding
+    try {
+      const decodedStr = Buffer.from(base64Url, 'base64url').toString('utf8');
+      return JSON.parse(decodedStr);
+    } catch {}
+
+    // Method 2: Normalized standard base64 with padding
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    const decodedStr = Buffer.from(base64, 'base64').toString('utf8');
+    return JSON.parse(decodedStr);
+  } catch (err) {
+    console.warn('Google JWT decode error:', err.message);
+    return null;
+  }
+}
+
 // Google Sign-In Endpoint
 router.post('/google', authLimiter, async (req, res) => {
-
   try {
     const { googleId, email, name, picture, credential } = req.body;
 
@@ -37,21 +63,19 @@ router.post('/google', authLimiter, async (req, res) => {
     let userIdGoogle = googleId;
 
     if (credential) {
-      try {
-        const payloadBase64 = credential.split('.')[1];
-        const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf8'));
+      const decoded = decodeGoogleJwt(credential);
+      if (decoded) {
         userEmail = decoded.email || userEmail;
-        userName = decoded.name || userName;
+        userName = decoded.name || decoded.given_name || userName;
         userPicture = decoded.picture || userPicture;
         userIdGoogle = decoded.sub || userIdGoogle;
-      } catch (e) {
-        console.warn('Failed to parse Google credential token:', e.message);
       }
     }
 
     if (!userEmail) {
       return res.status(400).json({ error: 'Google email address is required.' });
     }
+
 
     const cleanEmail = userEmail.trim().toLowerCase();
     const isSpecialAdmin = cleanEmail === 'samethxu@gmail.com' || cleanEmail === 'korb.sameth@gmail.com';

@@ -91,7 +91,9 @@ export default function App() {
 
   const handleAuthSuccess = (userData) => {
     setUser(userData);
+    setAuthModalOpen(false);
   };
+
 
   const handleShareCreated = (shareData) => {
     setActiveShare(shareData);

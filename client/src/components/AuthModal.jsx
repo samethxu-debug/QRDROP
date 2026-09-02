@@ -27,11 +27,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
     setError('');
 
     try {
+      // Extract client-side info from JWT payload as reliable fallback
+      let clientDecoded = null;
+      try {
+        const payloadBase64 = response.credential.split('.')[1];
+        const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        clientDecoded = JSON.parse(atob(base64));
+      } catch (e) {}
+
       const res = await safeFetchJson('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           credential: response.credential,
+          email: clientDecoded?.email,
+          name: clientDecoded?.name || clientDecoded?.given_name,
+          picture: clientDecoded?.picture,
+          googleId: clientDecoded?.sub,
         }),
       });
 
@@ -50,6 +62,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
       setLoading(false);
     }
   };
+
 
   // Direct Google Sign In (Works everywhere on phone and desktop)
   const handleDirectGoogleLogin = async (emailToUse, nameToUse) => {
