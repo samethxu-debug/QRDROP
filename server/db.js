@@ -197,6 +197,14 @@ export const db = {
       writeJSON(sharesFile, shares);
     }
   },
+  saveShares: (shares) => {
+    writeJSON(sharesFile, shares);
+    return true;
+  },
+  saveInboxes: (inboxes) => {
+    writeJSON(inboxesFile, inboxes);
+    return true;
+  },
 
   // Inboxes (Personal Receive QR & Confirmation Flow)
   getInboxes: () => readJSON(inboxesFile),
@@ -229,3 +237,7 @@ export const db = {
     return true;
   }
 };
+
+export default db;
+
+
