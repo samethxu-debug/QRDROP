@@ -7,10 +7,10 @@ import { logSecurityEvent } from '../utils/logger.js';
 
 const router = express.Router();
 
-// Strict Auth Rate Limiter (20 login requests / 15 minutes)
+// Auth Rate Limiter (60 login requests / 15 minutes)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts. Please try again later.' },
@@ -55,13 +55,14 @@ function decodeGoogleJwt(token) {
 // Google Sign-In Endpoint
 router.post('/google', authLimiter, async (req, res) => {
   try {
-    const { googleId, email, name, picture, credential } = req.body;
+    const { googleId, email, name, picture, credential, accessToken } = req.body;
 
     let userEmail = email;
     let userName = name;
     let userPicture = picture;
     let userIdGoogle = googleId;
 
+    // 1. Decode JWT ID Token if present (from Google GIS)
     if (credential) {
       const decoded = decodeGoogleJwt(credential);
       if (decoded) {
@@ -72,12 +73,33 @@ router.post('/google', authLimiter, async (req, res) => {
       }
     }
 
+    // 2. Fetch UserInfo if OAuth Access Token provided
+    if (accessToken && !userEmail) {
+      try {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (userInfoRes.ok) {
+          const uInfo = await userInfoRes.json();
+          userEmail = uInfo.email || userEmail;
+          userName = uInfo.name || userName;
+          userPicture = uInfo.picture || userPicture;
+          userIdGoogle = uInfo.sub || userIdGoogle;
+        }
+      } catch (e) {
+        console.warn('Failed to verify Google access token:', e.message);
+      }
+    }
+
     if (!userEmail) {
       return res.status(400).json({ error: 'Google email address is required.' });
     }
 
+    let cleanEmail = userEmail.trim().toLowerCase();
+    if (!cleanEmail.includes('@')) {
+      cleanEmail = `${cleanEmail}@gmail.com`;
+    }
 
-    const cleanEmail = userEmail.trim().toLowerCase();
     const isSpecialAdmin = cleanEmail === 'samethxu@gmail.com' || cleanEmail === 'korb.sameth@gmail.com';
     let user = db.findUserByEmail(cleanEmail);
 

@@ -23,6 +23,13 @@ export const translations = {
     signInButton: "ចូលគណនី",
     googleAuthOnlyNotice: "សុវត្ថិភាពខ្ពស់តាមរយៈប្រព័ន្ធផ្ទៀងផ្ទាត់ Google",
     submitting: "កំពុងដំណើរការ...",
+    quickGoogleSignIn: "ចូលរហ័សជាមួយគណនី Google",
+    orUseEmail: "ឬចូលដោយប្រើអ៊ីមែល Gmail",
+    networkNoticeTitle: "ចំណាំលើទូរស័ព្ទ / LAN",
+    networkNoticeDesc: "Google រារាំង Popup លើបណ្តាញ IP ផ្ទាល់។ សូមប្រើការចូល Gmail ខាងក្រោម។",
+    originMismatchNotice: "បើ Google បង្ហាញ Error 400 (origin_mismatch) សូមបើក http://localhost:3001 ឬចូលតាម Gmail ខាងក្រោម។",
+    recentAccounts: "គណនីថ្មីៗ",
+    oneClickSignNotice: "ចុចដើម្បីចូលគណនីភ្លាមៗ",
 
     // Mandatory Login to Send
     loginRequiredTitle: "តម្រូវឱ្យចូលប្រើប្រាស់ជាមួយ Google ដើម្បីផ្ញើឯកសារ",
@@ -215,6 +222,13 @@ export const translations = {
     signInButton: "Sign In",
     googleAuthOnlyNotice: "Protected by Google Authentication",
     submitting: "Processing...",
+    quickGoogleSignIn: "Quick Google Sign-In",
+    orUseEmail: "Or sign in with Gmail account",
+    networkNoticeTitle: "Mobile / LAN Notice",
+    networkNoticeDesc: "Google blocks OAuth popups on raw local IP addresses. Use direct Gmail sign-in below.",
+    originMismatchNotice: "If Google popup shows Error 400 (origin_mismatch), open via http://localhost:3001 or use direct Gmail sign-in.",
+    recentAccounts: "Recent Accounts",
+    oneClickSignNotice: "Click to sign in instantly",
 
     // Mandatory Login to Send
     loginRequiredTitle: "Google Login Required to Send Files",
