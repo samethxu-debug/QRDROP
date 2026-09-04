@@ -92,10 +92,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
       return;
     }
 
+    const onMessageReceived = (event) => {
+      if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+        const { user, token } = event.data;
+        if (popup && !popup.closed) popup.close();
+        clearInterval(timer);
+        window.removeEventListener('message', onMessageReceived);
+        setLoading(false);
+        if (user && token) {
+          onAuthSuccess(user, token);
+          onClose();
+        }
+      }
+    };
+
+    window.addEventListener('message', onMessageReceived);
+
     const timer = setInterval(async () => {
       try {
         if (popup.closed) {
           clearInterval(timer);
+          window.removeEventListener('message', onMessageReceived);
           setLoading(false);
           return;
         }
@@ -104,6 +121,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
           const hash = popup.location.hash || popup.location.search;
           popup.close();
           clearInterval(timer);
+          window.removeEventListener('message', onMessageReceived);
 
           const params = new URLSearchParams(hash.replace(/^#/, '?'));
           const idToken = params.get('id_token');
@@ -142,8 +160,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
             } else {
               setError(res.error || 'Google authentication failed.');
             }
-          } else {
-            setError('Google sign-in completed. Enter your Google email below if not auto-signed in.');
           }
         }
       } catch (e) {
@@ -151,30 +167,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
       }
     }, 500);
   };
-
-  // Check URL hash for OAuth redirect token
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
-      const params = new URLSearchParams(window.location.hash.replace(/^#/, '?'));
-      const idToken = params.get('id_token');
-      const accessToken = params.get('access_token');
-      if (idToken || accessToken) {
-        window.history.replaceState(null, '', window.location.pathname);
-        safeFetchJson('/api/auth/google', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential: idToken, accessToken }),
-        }).then(res => {
-          if (res.ok && res.data?.user) {
-            localStorage.setItem('qr_token', res.data.token);
-            localStorage.setItem('qr_user', JSON.stringify(res.data.user));
-            onAuthSuccess(res.data.user, res.data.token);
-            onClose();
-          }
-        });
-      }
-    }
-  }, []);
 
   if (!isOpen) return null;
 
