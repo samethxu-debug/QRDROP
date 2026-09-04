@@ -269,19 +269,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
             </div>
           </div>
 
-          <div>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="e.g. Your Name"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
-              />
-            </div>
-          </div>
-
           <button
             type="submit"
             disabled={loading}
