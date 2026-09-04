@@ -9,13 +9,26 @@ const DANGEROUS_EXTENSIONS = new Set([
   '.ps1', '.ps1xml', '.ps2', '.ps2xml', '.psc1', '.psc2',
   '.phtml', '.php', '.php3', '.php4', '.php5', '.php7', '.phps',
   '.jar', '.apk', '.gadget', '.reg', '.dll', '.sys', '.drv',
-  '.iso', '.vhd', '.vhdx', '.img'
+  '.iso', '.vhd', '.vhdx', '.img',
+  '.lnk', '.url', '.rar', '.7z', '.tar', '.gz', '.xz', '.bz2', '.cab'
 ]);
 
 export function isRestrictedExtension(filename) {
-  if (!filename) return false;
-  const ext = path.extname(filename).toLowerCase();
-  return DANGEROUS_EXTENSIONS.has(ext);
+  if (!filename || typeof filename !== 'string') return false;
+  const cleanName = filename.trim().replace(/[\s\.]+$|^\.+/g, '').toLowerCase();
+  const ext = path.extname(cleanName).toLowerCase();
+  if (DANGEROUS_EXTENSIONS.has(ext)) return true;
+
+  // Double extension protection (e.g. payload.exe.jpg or payload.lnk.png)
+  const parts = cleanName.split('.');
+  if (parts.length > 2) {
+    for (let i = 1; i < parts.length - 1; i++) {
+      if (DANGEROUS_EXTENSIONS.has('.' + parts[i])) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function sanitizeFilename(originalName) {

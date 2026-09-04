@@ -32,10 +32,11 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Rate Limiter for uploading into inbox (30 uploads / 15 mins)
+// Rate Limiter for uploading into inbox (60 uploads / 15 mins, skipped in test mode)
 const inboxUploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 60,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Upload rate limit reached. Please wait a moment.' },

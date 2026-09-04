@@ -7,10 +7,11 @@ import { logSecurityEvent } from '../utils/logger.js';
 
 const router = express.Router();
 
-// Auth Rate Limiter (60 login requests / 15 minutes)
+// Auth Rate Limiter (100 login requests / 15 minutes, skipped in test mode)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 100,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts. Please try again later.' },

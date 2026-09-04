@@ -32,7 +32,8 @@ app.use(helmet({
 // Rate Limiters
 const globalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 180,
+  max: 300,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
@@ -41,7 +42,7 @@ const globalLimiter = rateLimit({
       type: 'rate_limit',
       ip: req.ip,
       endpoint: req.originalUrl,
-      details: 'Global rate limit exceeded (180 req/min)',
+      details: 'Global rate limit exceeded',
     });
     res.status(429).json(options.message);
   }

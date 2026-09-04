@@ -34,10 +34,11 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Rate Limiter for uploading shares (30 uploads / 15 mins)
+// Rate Limiter for uploading shares (60 uploads / 15 mins, skipped in test mode)
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 60,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Upload limit reached. Please wait before uploading more files.' },
@@ -55,7 +56,8 @@ const uploadLimiter = rateLimit({
 // Rate Limiter for code lookups & password verification (prevents brute-force)
 const codeLookupLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 40,
+  max: 100,
+  skip: () => process.env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many lookup attempts. Please wait a moment.' },

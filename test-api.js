@@ -3,6 +3,15 @@ import fs from 'fs';
 async function test() {
   fs.writeFileSync('sample_photo.txt', 'This simulates a shared file or photo data.');
 
+  // Authenticate first
+  const authRes = await fetch('http://localhost:3001/api/auth/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'test.api@gmail.com', name: 'API Tester' }),
+  });
+  const authData = await authRes.json();
+  const token = authData.token;
+
   const fileData = fs.readFileSync('sample_photo.txt');
   const blob = new Blob([fileData], { type: 'text/plain' });
   const formData = new FormData();
@@ -13,6 +22,7 @@ async function test() {
 
   const uploadRes = await fetch('http://localhost:3001/api/shares/upload', {
     method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
     body: formData,
   });
 
