@@ -58,70 +58,83 @@ export default function App() {
 
   // Listen for Google OAuth callback in popup/redirect and sync main window login state
   useEffect(() => {
-    const handleOAuthCallback = async () => {
+    // 1. If running inside Google OAuth Popup window, post message to parent and CLOSE IMMEDIATELY
+    if (typeof window !== 'undefined' && window.opener && window.opener !== window) {
       const hash = window.location.hash;
-      if (hash && (hash.includes('access_token') || hash.includes('id_token'))) {
-        const params = new URLSearchParams(hash.replace(/^#/, '?'));
-        const idToken = params.get('id_token');
-        const accessToken = params.get('access_token');
-        
-        let userEmail = null;
-        let userName = null;
+      const search = window.location.search;
+      if (
+        (hash && (hash.includes('access_token') || hash.includes('id_token'))) ||
+        (search && (search.includes('access_token') || search.includes('id_token') || search.includes('code')))
+      ) {
         try {
-          if (idToken) {
-            const payloadBase64 = idToken.split('.')[1];
-            const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-            const decoded = JSON.parse(atob(base64));
-            userEmail = decoded.email;
-            userName = decoded.name;
-          }
-        } catch (e) {}
+          window.opener.postMessage({ type: 'GOOGLE_OAUTH_RAW_RESULT', hash, search }, '*');
+        } catch (err) {}
+        window.close();
+        return;
+      }
+    }
 
-        // Clean URL fragment
-        window.history.replaceState(null, '', window.location.pathname);
+    // 2. Function to authenticate raw OAuth params in main window
+    const processOAuthTokens = async (hashStr, searchStr) => {
+      const combined = (hashStr || '') + '&' + (searchStr || '');
+      const params = new URLSearchParams(combined.replace(/^[#?]/, '').replace(/#/g, '&'));
+      const idToken = params.get('id_token');
+      const accessToken = params.get('access_token');
+      
+      if (!idToken && !accessToken) return;
 
-        try {
-          const res = await safeFetchJson('/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              credential: idToken,
-              accessToken: accessToken,
-              email: userEmail,
-              name: userName,
-            }),
-          });
-
-          if (res.ok && res.data?.user) {
-            const { token, user } = res.data;
-            localStorage.setItem('qr_token', token);
-            localStorage.setItem('qr_user', JSON.stringify(user));
-            if (user?.email) localStorage.setItem('qr_last_email', user.email);
-            if (user?.name) localStorage.setItem('qr_last_name', user.name);
-
-            // If this is an OAuth popup window, notify parent window and auto-close immediately!
-            if (window.opener && window.opener !== window) {
-              try {
-                window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token, user }, '*');
-              } catch (err) {}
-              window.close();
-              return;
-            }
-
-            // Direct redirect in main window
-            setUser(user);
-            setAuthModalOpen(false);
-          }
-        } catch (e) {
-          console.error('Google OAuth callback error:', e);
+      let userEmail = null;
+      let userName = null;
+      try {
+        if (idToken) {
+          const payloadBase64 = idToken.split('.')[1];
+          const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+          const decoded = JSON.parse(atob(base64));
+          userEmail = decoded.email;
+          userName = decoded.name;
         }
+      } catch (e) {}
+
+      window.history.replaceState(null, '', window.location.pathname);
+
+      try {
+        const res = await safeFetchJson('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            credential: idToken,
+            accessToken: accessToken,
+            email: userEmail,
+            name: userName,
+          }),
+        });
+
+        if (res.ok && res.data?.user) {
+          const { token, user } = res.data;
+          localStorage.setItem('qr_token', token);
+          localStorage.setItem('qr_user', JSON.stringify(user));
+          if (user?.email) localStorage.setItem('qr_last_email', user.email);
+          if (user?.name) localStorage.setItem('qr_last_name', user.name);
+
+          setUser(user);
+          setAuthModalOpen(false);
+        }
+      } catch (e) {
+        console.error('Google OAuth processing error:', e);
       }
     };
 
-    handleOAuthCallback();
+    // Check main window location for direct redirect
+    if (window.location.hash.includes('access_token') || window.location.hash.includes('id_token')) {
+      processOAuthTokens(window.location.hash, window.location.search);
+    }
 
+    // 3. Listen for postMessage from popup window in main window
     const handleMessage = (event) => {
-      if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+      if (!event.data) return;
+      if (event.data.type === 'GOOGLE_OAUTH_RAW_RESULT') {
+        processOAuthTokens(event.data.hash, event.data.search);
+      } else if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
         const { token, user } = event.data;
         if (token) localStorage.setItem('qr_token', token);
         if (user) {
