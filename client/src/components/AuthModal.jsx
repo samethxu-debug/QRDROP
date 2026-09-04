@@ -60,8 +60,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
     }
   };
 
-  // Official Google OAuth Popup Window (bypasses blank gsi/transform screen)
-  const handleGoogleOAuthPopup = () => {
+  // Direct OAuth redirect - eliminates popup windows and works on all devices
+  const handleGoogleOAuthRedirect = () => {
     setLoading(true);
     setError('');
 
@@ -75,98 +75,72 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
       `&nonce=${Date.now()}` +
       `&prompt=select_account`;
 
-    const width = 500;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
+    window.location.href = authUrl;
+  };
 
-    const popup = window.open(
-      authUrl,
-      'GoogleAuthPopup',
-      `width=${width},height=${height},left=${left},top=${top},status=0,toolbar=0,menubar=0,location=0`
-    );
+  // Google Identity Services (GSI) initialization
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
 
-    if (!popup) {
-      setError('Popup window was blocked by your browser. Please enter your Gmail below.');
-      setLoading(false);
-      return;
-    }
-
-    const onMessageReceived = (event) => {
-      if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        const { user, token } = event.data;
-        if (popup && !popup.closed) popup.close();
-        clearInterval(timer);
-        window.removeEventListener('message', onMessageReceived);
-        setLoading(false);
-        if (user && token) {
-          onAuthSuccess(user, token);
-          onClose();
-        }
-      }
-    };
-
-    window.addEventListener('message', onMessageReceived);
-
-    const timer = setInterval(async () => {
+    const initGsi = () => {
       try {
-        if (popup.closed) {
-          clearInterval(timer);
-          window.removeEventListener('message', onMessageReceived);
-          setLoading(false);
-          return;
-        }
-
-        if (popup.location.href.startsWith(redirectUri)) {
-          const hash = popup.location.hash || popup.location.search;
-          popup.close();
-          clearInterval(timer);
-          window.removeEventListener('message', onMessageReceived);
-
-          const params = new URLSearchParams(hash.replace(/^#/, '?'));
-          const idToken = params.get('id_token');
-          const accessToken = params.get('access_token');
-
-          if (idToken || accessToken) {
-            let userEmail = null;
-            let userName = null;
-            try {
-              if (idToken) {
-                const payloadBase64 = idToken.split('.')[1];
-                const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-                const decoded = JSON.parse(atob(base64));
-                userEmail = decoded.email;
-                userName = decoded.name;
+        if (window.google?.accounts?.id) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: async (response) => {
+              if (response && response.credential) {
+                setLoading(true);
+                try {
+                  const res = await safeFetchJson('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential }),
+                  });
+                  if (res.ok && res.data?.user) {
+                    localStorage.setItem('qr_token', res.data.token);
+                    localStorage.setItem('qr_user', JSON.stringify(res.data.user));
+                    onAuthSuccess(res.data.user, res.data.token);
+                    onClose();
+                  } else {
+                    setError(res.error || 'Google sign in failed');
+                  }
+                } catch (e) {
+                  setError('Google sign in failed');
+                } finally {
+                  setLoading(false);
+                }
               }
-            } catch (e) {}
+            },
+          });
 
-            const res = await safeFetchJson('/api/auth/google', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                credential: idToken,
-                accessToken: accessToken,
-                email: userEmail,
-                name: userName,
-              }),
+          const btnContainer = document.getElementById('google-gsi-button');
+          if (btnContainer) {
+            btnContainer.innerHTML = '';
+            window.google.accounts.id.renderButton(btnContainer, {
+              theme: 'filled_blue',
+              size: 'large',
+              width: '100%',
+              shape: 'pill',
+              text: 'continue_with',
             });
-            if (res.ok && res.data?.user) {
-              localStorage.setItem('qr_token', res.data.token);
-              localStorage.setItem('qr_user', JSON.stringify(res.data.user));
-              if (res.data.user?.email) localStorage.setItem('qr_last_email', res.data.user.email);
-              if (res.data.user?.name) localStorage.setItem('qr_last_name', res.data.user.name);
-              onAuthSuccess(res.data.user, res.data.token);
-              onClose();
-            } else {
-              setError(res.error || 'Google authentication failed.');
-            }
           }
         }
       } catch (e) {
-        // Cross-origin exception while user interacts with accounts.google.com
+        console.error('GSI Init Error:', e);
       }
-    }, 500);
-  };
+    };
+
+    if (window.google?.accounts?.id) {
+      initGsi();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => initGsi();
+      document.body.appendChild(script);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -219,11 +193,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
         )}
 
         {/* SECTION 1: Google OAuth Button */}
-        <div className="space-y-2">
+        <div className="space-y-3">
+          <div id="google-gsi-button" className="w-full flex justify-center min-h-[44px]"></div>
+
           <button
             type="button"
             disabled={loading}
-            onClick={handleGoogleOAuthPopup}
+            onClick={handleGoogleOAuthRedirect}
             className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs shadow-xl transition cursor-pointer flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
