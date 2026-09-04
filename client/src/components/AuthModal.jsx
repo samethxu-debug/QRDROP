@@ -244,34 +244,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-slate-800/80 w-full my-1" />
 
-        {/* SECTION 2: Personal Google Email Login Form */}
-        <form onSubmit={handleDirectGoogleLogin} className="space-y-3 text-left">
-          <div>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                required
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="your.email@gmail.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/10 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <span>{loading ? (t.submitting || 'Signing in...') : (t.signInButton || 'Sign In with Google')}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
 
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-800 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
