@@ -234,6 +234,8 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
     }
   };
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const totalSize = files.reduce((acc, f) => acc + f.size, 0);
 
   return (
@@ -454,87 +456,9 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
         <div className="lg:col-span-5 space-y-4">
           <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
             
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-400" />
-              {t.transferDetails}
-            </h2>
-
-            {/* Transfer Title */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                {t.transferTitlePlaceholder}
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. My Photo Album 2026"
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition"
-              />
-            </div>
-
-            {/* Note / Message */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                {t.transferNotePlaceholder}
-              </label>
-              <textarea
-                rows={2}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Message for recipient..."
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
-              />
-            </div>
-
-            {/* Expiry Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-teal-400" />
-                {t.expiryOption}
-              </label>
-              <select
-                value={expiryHours}
-                onChange={(e) => setExpiryHours(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-teal-500 transition"
-              >
-                <option value="1">{t.expiry1h}</option>
-                <option value="24">{t.expiry24h}</option>
-                <option value="72">{t.expiry3d}</option>
-                <option value="168">{t.expiry7d}</option>
-                <option value="0">{t.expiryNever}</option>
-              </select>
-            </div>
-
-            {/* Password Protection */}
-            <div className="pt-2 border-t border-slate-800">
-              <label className="flex items-center gap-2 cursor-pointer mb-2">
-                <input
-                  type="checkbox"
-                  checked={enablePassword}
-                  onChange={(e) => setEnablePassword(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-teal-500/20"
-                />
-                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" />
-                  {t.optionalPassword}
-                </span>
-              </label>
-
-              {enablePassword && (
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.passwordProtectPlaceholder}
-                  className="w-full bg-slate-950/80 border border-amber-500/40 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition"
-                />
-              )}
-            </div>
-
             {/* Progress bar during upload */}
             {uploading && (
-              <div className="space-y-1.5 pt-2">
+              <div className="space-y-1.5 pb-2">
                 <div className="flex justify-between text-[11px] font-semibold text-slate-300">
                   <span>{t.uploading}</span>
                   <span>{uploadProgress}%</span>
@@ -548,22 +472,114 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Primary Generate QR Code Button */}
             <button
               type="button"
               onClick={handleSubmit}
               disabled={uploading || files.length === 0}
-              className="w-full mt-3 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-extrabold text-sm shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2.5 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-black text-sm shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2.5 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {uploading ? (
                 <span>{t.uploading}</span>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5" />
                   <span>{t.sendButton}</span>
                 </>
               )}
             </button>
+
+            {/* Optional Transfer Settings Toggle */}
+            <div className="pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full py-2 px-3 rounded-xl bg-slate-950/70 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-teal-300 transition flex items-center justify-between cursor-pointer"
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                  <span>{t.transferDetails} (Optional)</span>
+                </span>
+                <span className="text-[11px]">{showAdvanced ? '▲ Hide' : '▼ Options (Expiry, Password)'}</span>
+              </button>
+
+              {showAdvanced && (
+                <div className="space-y-3.5 pt-3.5 animate-in fade-in duration-200">
+                  {/* Transfer Title */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">
+                      {t.transferTitlePlaceholder}
+                    </label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. My Photo Album 2026"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition"
+                    />
+                  </div>
+
+                  {/* Note / Message */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">
+                      {t.transferNotePlaceholder}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Message for recipient..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
+                    />
+                  </div>
+
+                  {/* Expiry Selector */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-teal-400" />
+                      {t.expiryOption}
+                    </label>
+                    <select
+                      value={expiryHours}
+                      onChange={(e) => setExpiryHours(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-teal-500 transition"
+                    >
+                      <option value="1">{t.expiry1h}</option>
+                      <option value="24">{t.expiry24h}</option>
+                      <option value="72">{t.expiry3d}</option>
+                      <option value="168">{t.expiry7d}</option>
+                      <option value="0">{t.expiryNever}</option>
+                    </select>
+                  </div>
+
+                  {/* Password Protection */}
+                  <div className="pt-2 border-t border-slate-800">
+                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                      <input
+                        type="checkbox"
+                        checked={enablePassword}
+                        onChange={(e) => setEnablePassword(e.target.checked)}
+                        className="rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-teal-500/20"
+                      />
+                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        {t.optionalPassword}
+                      </span>
+                    </label>
+
+                    {enablePassword && (
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t.passwordProtectPlaceholder}
+                        className="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>
