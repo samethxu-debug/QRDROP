@@ -245,13 +245,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
         </div>
 
         {/* Divider */}
-        <div className="relative flex items-center justify-center my-1">
-          <div className="border-t border-slate-800 w-full" />
-          <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider shrink-0">
-            {t.orUseEmail || 'or sign in with Google email'}
-          </span>
-          <div className="border-t border-slate-800 w-full" />
-        </div>
+        <div className="border-t border-slate-800/80 w-full my-1" />
 
         {/* SECTION 2: Personal Google Email Login Form */}
         <form onSubmit={handleDirectGoogleLogin} className="space-y-3 text-left">

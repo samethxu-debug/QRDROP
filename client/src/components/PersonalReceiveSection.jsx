@@ -18,7 +18,8 @@ import {
   ArrowDownToLine,
   RefreshCw,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Copy
 } from 'lucide-react';
 import ImageLightbox from './ImageLightbox';
 import { safeFetchJson } from '../utils/api';
@@ -277,16 +278,18 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
         {/* Left: Personal Receive QR Code (6 cols) */}
         <div className="md:col-span-6 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-xl">
           
-          <div className="inline-flex p-2.5 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-            <QrCode className="w-6 h-6" />
+          {/* Prominent Auto ON & Active Status Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold animate-pulse">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span>{t.liveListener || '● ប្រព័ន្ធកំពុងដំណើរការផ្ទាល់ (Auto ON & Listening)'}</span>
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-white">
-              {t.myReceiveQR || 'My Receive QR Code'}
+            <h2 className="text-lg sm:text-xl font-extrabold text-white">
+              {t.myReceiveQR || 'QR Code ផ្ទាល់ខ្លួនសម្រាប់ទទួល'}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {t.waitingForSender || 'Waiting for other users to scan and send files...'}
+            <p className="text-xs text-slate-400 mt-1">
+              {t.waitingForSender || 'កំពុងរង់ចាំអ្នកដទៃស្កេន និងផ្ញើឯកសារមក...'}
             </p>
           </div>
 
@@ -299,34 +302,52 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                 className="w-56 h-56 rounded-xl object-contain mx-auto"
               />
             ) : (
-              <div className="w-56 h-56 flex items-center justify-center">
+              <div className="w-56 h-56 flex flex-col items-center justify-center space-y-2">
                 <RefreshCw className="w-8 h-8 text-teal-500 animate-spin" />
+                <span className="text-xs font-semibold text-slate-600">កំពុងបង្កើត QR Code...</span>
               </div>
             )}
           </div>
 
-          {/* Inbox Code Identifier & Refresh Button */}
-          <div className="flex flex-col items-center gap-2">
+          {/* Inbox Code Identifier, Copy Link & Refresh Button */}
+          <div className="flex flex-col items-center gap-2.5 pt-1">
             <div className="flex flex-col items-center">
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                {t.inboxIdLabel || 'Inbox ID'}
+                {t.inboxIdLabel || 'លេខសម្គាល់កូដទទួល (Inbox ID)'}
               </span>
-              <span className="text-lg font-mono font-bold tracking-widest text-teal-300 bg-slate-950 px-3.5 py-1 rounded-xl border border-slate-800 mt-1">
-                {inbox?.id}
+              <span className="text-lg font-mono font-bold tracking-widest text-teal-300 bg-slate-950 px-4 py-1.5 rounded-xl border border-slate-800 mt-1 shadow-inner">
+                {inbox?.id || 'INB-******'}
               </span>
             </div>
 
-            {/* Refresh / Generate New QR Button */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={initInbox}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-teal-300 border border-slate-800 text-xs font-semibold transition cursor-pointer mt-1"
-              title="Generate a fresh new QR code"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-400' : ''}`} />
-              <span>{t.generateNewQR || 'Generate New QR Code'}</span>
-            </button>
+            {/* Quick Actions */}
+            <div className="flex items-center justify-center gap-2 pt-1">
+              {inbox?.sendUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inbox.sendUrl);
+                    setStatusMessage('បានចម្លង Link ទទួលឯកសារជោគជ័យ!');
+                    setTimeout(() => setStatusMessage(''), 3000);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>ចម្លង Link</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={initInbox}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-teal-300 border border-slate-800 text-xs font-semibold transition cursor-pointer"
+                title="Generate a fresh new QR code"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-400' : ''}`} />
+                <span>{t.generateNewQR || 'បង្កើត QR Code ថ្មី'}</span>
+              </button>
+            </div>
           </div>
 
         </div>
