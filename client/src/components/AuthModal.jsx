@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ShieldCheck, AlertCircle, Sparkles, Mail, User, Smartphone, Laptop } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle, Mail, User, Smartphone, Laptop, ArrowRight } from 'lucide-react';
 import { safeFetchJson } from '../utils/api';
 
 const GOOGLE_CLIENT_ID = '945707098444-3l5s3sbu0nelrvl37l995kk0q6cs161m.apps.googleusercontent.com';
@@ -10,14 +10,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
   const [gsiReady, setGsiReady] = useState(false);
   const [gsiOriginError, setGsiOriginError] = useState(false);
 
-  // Email state
+  // Personal Google email state
   const [emailInput, setEmailInput] = useState(() => {
     return localStorage.getItem('qr_last_email') || '';
   });
   const [nameInput, setNameInput] = useState(() => {
     return localStorage.getItem('qr_last_name') || '';
   });
-  const [showManualForm, setShowManualForm] = useState(false);
 
   const googleBtnContainerRef = useRef(null);
 
@@ -25,19 +24,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const isRawIp = /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(currentOrigin);
   const isPort5173 = currentOrigin.includes(':5173');
-
-  // Quick preset accounts
-  const lastSavedEmail = typeof localStorage !== 'undefined' ? localStorage.getItem('qr_last_email') : null;
-  const quickAccounts = [
-    { email: 'korb.sameth@gmail.com', name: 'Korb Sameth' },
-    { email: 'samethxu@gmail.com', name: 'Sameth Admin' },
-  ];
-  if (lastSavedEmail && !quickAccounts.some(a => a.email.toLowerCase() === lastSavedEmail.toLowerCase())) {
-    quickAccounts.unshift({
-      email: lastSavedEmail,
-      name: localStorage.getItem('qr_last_name') || lastSavedEmail.split('@')[0],
-    });
-  }
 
   // Handle Google Token response from Google Identity Services (Official GIS Popup/One-tap)
   const handleGoogleCredentialResponse = async (response) => {
@@ -50,7 +36,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
     setError('');
 
     try {
-      // Decode client-side JWT payload as fallback
       let clientDecoded = null;
       try {
         const payloadBase64 = response.credential.split('.')[1];
@@ -89,16 +74,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
     }
   };
 
-  // Direct Google Sign In (Works everywhere: Localhost, Phone LAN, Vercel, Render)
-  const handleDirectGoogleLogin = async (emailToUse, nameToUse) => {
-    const rawEmail = (emailToUse || emailInput || '').trim();
+  // Direct Personal Google Sign In
+  const handleDirectGoogleLogin = async (e) => {
+    if (e) e.preventDefault();
+    const rawEmail = (emailInput || '').trim();
     if (!rawEmail) {
-      setError('Please enter a Google/Gmail address.');
+      setError('Please enter your Google / Gmail email address.');
       return;
     }
 
     const email = rawEmail.includes('@') ? rawEmail.toLowerCase() : `${rawEmail.toLowerCase()}@gmail.com`;
-    const name = (nameToUse || nameInput || email.split('@')[0]).trim();
+    const name = (nameInput || email.split('@')[0]).trim();
 
     setLoading(true);
     setError('');
@@ -138,7 +124,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
 
     let mounted = true;
 
-    // Google disallows raw IP addresses over HTTP, so skip GIS iframe on raw IP to avoid origin errors
     if (isRawIp) {
       setGsiReady(false);
       return;
@@ -197,7 +182,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden text-center space-y-4"
+        className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden text-center space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Background Glow */}
@@ -231,11 +216,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
           </p>
         </div>
 
-        {/* Environment & Network Badges / Info */}
+        {/* Network / Origin Info */}
         {isRawIp && (
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] flex items-center justify-start gap-2 text-left">
             <Smartphone className="w-4 h-4 shrink-0 text-cyan-400" />
-            <span>{t.networkNoticeDesc || 'Google restricts popups on raw local IP addresses. Use direct Gmail sign-in below.'}</span>
+            <span>{t.networkNoticeDesc || 'Google restricts popups on raw local IP addresses. Use personal Gmail sign-in below.'}</span>
           </div>
         )}
 
@@ -264,121 +249,60 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
         )}
 
         {/* Divider */}
-        <div className="relative flex items-center justify-center my-1">
-          <div className="border-t border-slate-800 w-full" />
-          <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider shrink-0">
-            {t.quickGoogleSignIn || 'Quick Google Sign-In'}
-          </span>
-          <div className="border-t border-slate-800 w-full" />
-        </div>
-
-        {/* SECTION 2: 1-Click Quick Accounts */}
-        <div className="space-y-2 text-left">
-          <label className="block text-[11px] font-semibold text-slate-400">
-            {t.recentAccounts || 'Select Google Account:'}
-          </label>
-          <div className="grid grid-cols-1 gap-2">
-            {quickAccounts.map((acc) => (
-              <button
-                key={acc.email}
-                type="button"
-                disabled={loading}
-                onClick={() => handleDirectGoogleLogin(acc.email, acc.name)}
-                className="group w-full p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800/80 hover:border-teal-500/40 text-left flex items-center justify-between transition cursor-pointer disabled:opacity-50"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div className="truncate">
-                    <div className="text-xs font-bold text-slate-200 group-hover:text-teal-300 transition truncate">
-                      {acc.name}
-                    </div>
-                    <div className="text-[10px] text-slate-400 truncate">
-                      {acc.email}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-teal-400 opacity-0 group-hover:opacity-100 transition shrink-0 pl-2">
-                  {t.oneClickSignNotice || 'Sign In →'}
-                </span>
-              </button>
-            ))}
+        {!isRawIp && !gsiOriginError && gsiReady && (
+          <div className="relative flex items-center justify-center my-1">
+            <div className="border-t border-slate-800 w-full" />
+            <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider shrink-0">
+              {t.orUseEmail || 'or sign in with personal Google email'}
+            </span>
+            <div className="border-t border-slate-800 w-full" />
           </div>
-        </div>
+        )}
 
-        {/* SECTION 3: Custom Gmail Account Input */}
-        <div className="pt-1">
-          {!showManualForm ? (
-            <button
-              type="button"
-              onClick={() => setShowManualForm(true)}
-              className="text-[11px] text-slate-400 hover:text-teal-300 transition underline underline-offset-4 cursor-pointer"
-            >
-              {t.specifyGoogleAccount || 'Enter another Google email account'}
-            </button>
-          ) : (
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleDirectGoogleLogin(emailInput, nameInput);
-              }}
-              className="space-y-2.5 text-left pt-1"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">
-                  {t.googleEmailLabel || 'Google Email Address (Gmail)'}
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    required
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="your.email@gmail.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition"
-                    autoFocus
-                  />
-                </div>
-              </div>
+        {/* SECTION 2: Personal Google Email Login Form */}
+        <form onSubmit={handleDirectGoogleLogin} className="space-y-3 text-left">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              {t.googleEmailLabel || 'Google Email Address (Gmail)'}
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                required
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="your.email@gmail.com"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">
-                  {t.googleNameLabel || 'Account Name (Optional)'}
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    placeholder="e.g. Korb Sameth"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">
+              {t.googleNameLabel || 'Account Name (Optional)'}
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="e.g. Your Name"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+              />
+            </div>
+          </div>
 
-              <div className="pt-1 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowManualForm(false)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 py-2 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition cursor-pointer disabled:opacity-50"
-                >
-                  {loading ? (t.submitting || 'Signing in...') : (t.signInButton || 'Sign In with Google')}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/10 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <span>{loading ? (t.submitting || 'Signing in...') : (t.signInButton || 'Sign In with Google')}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
 
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-800 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
@@ -390,3 +314,4 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, t }) {
     </div>
   );
 }
+
