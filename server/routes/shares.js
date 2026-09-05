@@ -453,6 +453,15 @@ router.get('/:code', optionalAuth, codeLookupLimiter, async (req, res) => {
 
     const share = db.findShareByCode(code);
     if (!share) {
+      const inbox = db.findInboxById(code);
+      if (inbox || code.toUpperCase().startsWith('INB')) {
+        return res.json({
+          isInbox: true,
+          inboxId: code,
+          redirectUrl: `/send-to/${code}`,
+          message: 'Personal Receive QR Code detected.',
+        });
+      }
       return res.status(404).json({ error: 'Transfer not found or has been deleted.' });
     }
 

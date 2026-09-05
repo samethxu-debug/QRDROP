@@ -636,7 +636,8 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
           onClose={() => setLightboxIndex(-1)}
           onNavigate={(newIdx) => setLightboxIndex(newIdx)}
           shareCode={inbox?.id}
-          customPreviewUrl={(img) => `/api/inbox/${inbox.id}/preview/${img.id}`}
+          customPreviewUrl={(img) => `/api/inbox/${inbox.id}/preview/${typeof img === 'string' ? img : img?.id}`}
+          customDownloadUrl={(img) => `/api/inbox/${inbox.id}/preview/${typeof img === 'string' ? img : img?.id}`}
           t={t}
         />
       )}

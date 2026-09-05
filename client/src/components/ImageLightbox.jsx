@@ -66,8 +66,10 @@ export default function ImageLightbox({
     : `/api/shares/${shareCode}/download/${currentImage.id}`;
 
   const hasLiveVideo = Boolean(currentImage.isLivePhoto || currentImage.pairedLiveVideoId);
-  const liveVideoUrl = currentImage.pairedLiveVideoId && shareCode
-    ? `/api/inbox/${shareCode}/preview/${currentImage.pairedLiveVideoId}`
+  const liveVideoUrl = currentImage.pairedLiveVideoId
+    ? (customPreviewUrl 
+        ? customPreviewUrl(currentImage.pairedLiveVideoId) 
+        : `/api/shares/${shareCode}/preview/${currentImage.pairedLiveVideoId}`)
     : null;
 
   const cycleBgMode = () => {

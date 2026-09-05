@@ -42,8 +42,15 @@ export default function App() {
     if (path.startsWith('/receive/')) {
       const code = path.replace('/receive/', '').split('/')[0];
       if (code) {
-        setReceiveCode(code);
-        setCurrentTab('receive');
+        const upper = code.toUpperCase();
+        if (upper.startsWith('INB') || upper.includes('INB-')) {
+          setInboxId(upper);
+          setCurrentTab('send-to');
+          window.history.replaceState({}, '', `/send-to/${upper}`);
+        } else {
+          setReceiveCode(code);
+          setCurrentTab('receive');
+        }
       }
     } else if (path.startsWith('/send-to/')) {
       const id = path.replace('/send-to/', '').split('/')[0];
@@ -194,15 +201,31 @@ export default function App() {
   };
 
   const handleScanSuccess = (code) => {
-    setReceiveCode(code);
-    setCurrentTab('receive');
-    window.history.pushState({}, '', `/receive/${code}`);
+    if (!code) return;
+    const cleanCode = code.trim().toUpperCase();
+    if (cleanCode.startsWith('INB') || cleanCode.includes('INB-')) {
+      setInboxId(cleanCode);
+      setCurrentTab('send-to');
+      window.history.pushState({}, '', `/send-to/${cleanCode}`);
+    } else {
+      setReceiveCode(cleanCode);
+      setCurrentTab('receive');
+      window.history.pushState({}, '', `/receive/${cleanCode}`);
+    }
   };
 
   const handleOpenReceive = (code) => {
-    setReceiveCode(code);
-    setCurrentTab('receive');
-    window.history.pushState({}, '', `/receive/${code}`);
+    if (!code) return;
+    const cleanCode = code.trim().toUpperCase();
+    if (cleanCode.startsWith('INB') || cleanCode.includes('INB-')) {
+      setInboxId(cleanCode);
+      setCurrentTab('send-to');
+      window.history.pushState({}, '', `/send-to/${cleanCode}`);
+    } else {
+      setReceiveCode(cleanCode);
+      setCurrentTab('receive');
+      window.history.pushState({}, '', `/receive/${cleanCode}`);
+    }
   };
 
   const handleGoBack = () => {

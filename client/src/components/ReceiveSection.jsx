@@ -52,6 +52,10 @@ export default function ReceiveSection({ code, t, onGoBack, onShowQR }) {
       const res = await fetch(url, { headers });
       const data = await res.json();
 
+      if (data.isInbox || code.toUpperCase().startsWith('INB')) {
+        window.location.href = `/send-to/${data.inboxId || code}`;
+        return;
+      }
 
       if (res.status === 401 && data.isPasswordProtected) {
         setIsPasswordRequired(true);
