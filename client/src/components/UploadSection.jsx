@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { safeFetchJson } from '../utils/api';
+import { processIncomingFiles, packageFolderToZip } from '../utils/fileUtils';
 
 // Security: Restricted executable & dangerous file extensions
 const RESTRICTED_EXTENSIONS = [
@@ -73,7 +74,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
     return <File className="w-5 h-5 text-slate-400" />;
   };
 
-  const handleFileSelect = (selectedFiles) => {
+  const handleFileSelect = async (selectedInput) => {
     setError('');
     setBlockedFilesList([]);
 
@@ -83,15 +84,14 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
       return;
     }
 
-    const incomingFiles = Array.from(selectedFiles);
-    if (incomingFiles.length === 0) return;
+    const { files: incomingFiles, detectedFolderName: folderName } = await processIncomingFiles(selectedInput);
+    if (incomingFiles.length === 0) {
+      setError('This folder is empty or contains no valid files.');
+      return;
+    }
 
-    // Check for folder name from webkitRelativePath
-    if (incomingFiles[0].webkitRelativePath) {
-      const topFolder = incomingFiles[0].webkitRelativePath.split('/')[0];
-      if (topFolder) {
-        setDetectedFolderName(topFolder);
-      }
+    if (folderName) {
+      setDetectedFolderName(folderName);
     }
 
     // Filter restricted files
@@ -118,7 +118,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
 
     // Generate previews for images
     allowed.forEach((file) => {
-      if (file.type.startsWith('image/')) {
+      if (file.type && file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreviews((prev) => [...prev, { name: file.name, url: reader.result }]);
@@ -128,7 +128,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
     });
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
 
@@ -138,8 +138,8 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
       return;
     }
 
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileSelect(e.dataTransfer.files);
+    if (e.dataTransfer) {
+      await handleFileSelect(e.dataTransfer);
     }
   };
 
@@ -168,10 +168,21 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
     setError('');
 
     try {
+      let uploadFiles = files;
+      // Auto-package folder into a clean .zip file if folder was selected with multiple files
+      if (detectedFolderName && files.length > 1) {
+        try {
+          const zippedFile = await packageFolderToZip(files, detectedFolderName);
+          uploadFiles = [zippedFile];
+        } catch (zipErr) {
+          console.warn('Folder zip fallback notice:', zipErr);
+        }
+      }
+
       const formData = new FormData();
-      files.forEach((f) => formData.append('files', f));
+      uploadFiles.forEach((f) => formData.append('files', f));
       
-      const autoTitle = title.trim() || detectedFolderName || (files.length === 1 ? files[0].name : `${files.length} Shared Files`);
+      const autoTitle = title.trim() || (detectedFolderName ? `Folder: ${detectedFolderName}` : (files.length === 1 ? files[0].name : `${files.length} Shared Files`));
       formData.append('title', autoTitle);
       if (detectedFolderName) {
         formData.append('folderName', detectedFolderName);
@@ -342,7 +353,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
               ref={fileInputRef}
               type="file"
               multiple
-              onChange={(e) => handleFileSelect(e.target.files)}
+              onChange={(e) => handleFileSelect(e.target)}
               className="hidden"
             />
             <input
@@ -351,7 +362,7 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
               webkitdirectory=""
               directory=""
               multiple
-              onChange={(e) => handleFileSelect(e.target.files)}
+              onChange={(e) => handleFileSelect(e.target)}
               className="hidden"
             />
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-teal-500/20 to-emerald-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:scale-110 group-hover:text-teal-300 transition-all">
