@@ -315,7 +315,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
           {/* Prominent Auto ON & Active Status Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold animate-pulse">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>{t.liveListener || '● ប្រព័ន្ធកំពុងដំណើរការផ្ទាល់ (Auto ON & Listening)'}</span>
+            <span>{t.liveListener || 'ប្រព័ន្ធកំពុងដំណើរការផ្ទាល់ (Auto ON & Listening)'}</span>
           </div>
 
           <div>

@@ -538,11 +538,13 @@ router.get('/:code/preview/:fileId', async (req, res) => {
       return res.status(404).send('File missing from disk');
     }
 
+    const stat = fs.statSync(filePath);
     const safeMime = getSafeMimeType(file.originalName, file.mimetype);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'public, max-age=86400');
 
+    const range = req.headers.range;
     // Support HTTP 206 partial content for HTML5 video seeking & iOS Safari
     if (range && (safeMime.startsWith('video/') || safeMime.startsWith('audio/'))) {
       const parts = range.replace(/bytes=/, "").split("-");

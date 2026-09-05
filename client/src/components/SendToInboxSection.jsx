@@ -596,7 +596,7 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
                       <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                       {p.isLive && (
                         <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-slate-950/80 border border-teal-500/40 text-[8px] font-bold text-teal-300">
-                          LIVE ⭕
+                          LIVE
                         </div>
                       )}
                     </div>
@@ -792,7 +792,7 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
               </div>
               <div className="flex justify-between border-b border-slate-800/80 pb-2">
                 <span className="text-slate-400">{t.qualityLabel || 'Transfer Quality'}:</span>
-                <span className="font-bold text-emerald-400">⚡ {t.highQualityBadge || 'Original HD (Lossless 100%)'}</span>
+                <span className="font-bold text-emerald-400">{t.highQualityBadge || 'Original HD (Lossless 100%)'}</span>
               </div>
               {senderName && (
                 <div className="flex justify-between border-b border-slate-800/80 pb-2">
