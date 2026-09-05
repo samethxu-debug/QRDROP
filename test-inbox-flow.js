@@ -50,7 +50,7 @@ async function testInboxFlow() {
   }
   console.log(`         [VERIFIED] Personal QR code is preserved: ${inbox1.id} === ${inbox1_repeat.id}`);
 
-  // 4. Force Create Second Unique Inbox (Generate New QR)
+  // 4. Verify Personal QR cannot be changed (forceNew retains same user QR)
   const createRes2 = await fetch('http://localhost:3001/api/inbox/create', {
     method: 'POST',
     headers: {
@@ -61,12 +61,12 @@ async function testInboxFlow() {
   });
   const createData2 = await createRes2.json();
   const inbox2 = createData2.inbox;
-  console.log(`[Step 3] Second Fresh Unique Inbox created (forceNew): ID = ${inbox2?.id}`);
+  console.log(`[Step 3] Personal QR ID fetched: ID = ${inbox2?.id}`);
 
-  if (!inbox1?.id || !inbox2?.id || inbox1.id === inbox2.id) {
-    throw new Error('Step 3 Failed: Personal QR codes were not unique!');
+  if (!inbox1?.id || !inbox2?.id || inbox1.id !== inbox2.id) {
+    throw new Error('Step 3 Failed: Personal QR code changed when it should be permanent!');
   }
-  console.log(`         [VERIFIED] Unique QR Code 1 (${inbox1.id}) != QR Code 2 (${inbox2.id})`);
+  console.log(`         [VERIFIED] Personal QR Code is permanent and fixed: ${inbox1.id} === ${inbox2.id}`);
 
   // 5. Prohibited file upload to inbox
   fs.writeFileSync('virus.exe', 'MZ binary');

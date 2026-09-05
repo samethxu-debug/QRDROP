@@ -90,7 +90,7 @@ function generateCode() {
   return code;
 }
 
-// 1. Get or Create Persistent Unique Personal Inbox QR Code (Requires Auth)
+// 1. Get or Create Permanent Unique Personal Inbox QR Code (Requires Auth)
 router.get('/my-qr', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -105,22 +105,20 @@ router.get('/my-qr', requireAuth, async (req, res) => {
   }
 });
 
-// Create/Fetch Unique Personal Inbox QR Code
+// Create/Fetch Permanent Personal Inbox QR Code (100% fixed per userId, Unlimited lifetime)
 router.post('/create', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userEmail = req.user.email;
     const hostName = req.user.name || (req.body.hostName || 'Host Device');
     
-    // Unless forceNew is requested, preserve existing unique personal inbox for user
-    if (!req.body.forceNew) {
-      const existingInbox = db.findInboxByUserId(userId);
-      if (existingInbox) {
-        return res.json({ inbox: existingInbox });
-      }
+    // Check if user already has a permanent personal inbox
+    const existingInbox = db.findInboxByUserId(userId);
+    if (existingInbox) {
+      return res.json({ inbox: existingInbox });
     }
 
-    // Always generate a fresh, unique inbox ID so each user's QR code is distinct
+    // Generate a permanent, unique inbox ID for the user
     let inboxId;
     let attempts = 0;
     do {
@@ -152,18 +150,14 @@ router.post('/create', requireAuth, async (req, res) => {
       sendUrl,
       qrDataUrl,
       status: 'waiting',
+      isPermanent: true,
+      expiresAt: null, // Unlimited Lifetime Expiry
       pendingTransfers: [],
       createdAt: new Date().toISOString(),
       lastActivityAt: new Date().toISOString(),
     };
 
-    const existingInbox = db.findInboxByUserId(userId);
-    if (existingInbox && req.body.forceNew) {
-      db.updateInbox(existingInbox.id, inbox);
-    } else {
-      db.createInbox(inbox);
-    }
-
+    db.createInbox(inbox);
     return res.status(201).json({ inbox });
   } catch (err) {
     console.error('Create inbox error:', err);

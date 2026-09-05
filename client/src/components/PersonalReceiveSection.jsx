@@ -355,21 +355,11 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                   <span>ចម្លង Link</span>
                 </button>
               )}
-
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => initInbox(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-teal-300 border border-slate-800 text-xs font-semibold transition cursor-pointer"
-                title="Generate a fresh new QR code"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-400' : ''}`} />
-                <span>{t.generateNewQR || 'បង្កើត QR Code ថ្មី'}</span>
-              </button>
             </div>
 
-            <p className="text-[11px] text-teal-400/90 font-medium pt-1">
-              ✓ {t.persistentQRBadge || 'QR Code ផ្ទាល់ខ្លួនថេរ (មិនមានស្ទួន)'}
+            <p className="text-[11px] text-teal-400 font-bold pt-1 flex items-center justify-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+              <span>{t.persistentQRBadge || 'QR Code ផ្ទាល់ខ្លួនថេរ និងគ្មានការកំណត់ពេលវេលាផុតកំណត់'}</span>
             </p>
           </div>
 
