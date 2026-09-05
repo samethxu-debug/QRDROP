@@ -118,23 +118,30 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
     return <File className="w-5 h-5 text-slate-400" />;
   };
 
-  // Host approves viewing transfer when host clicks View
+  // Host approves viewing transfer automatically when host clicks View or opens modal
   const handleApproveView = async (transfer) => {
-    if (!inbox?.id || !transfer?.transferId) {
+    if (!transfer?.transferId || !inbox?.id) {
       setShowReviewModal(true);
       return;
     }
+    // Instantly update local state to auto-approve viewing
+    setPendingTransfer((prev) => (prev ? { ...prev, isViewApproved: true } : prev));
+    setShowReviewModal(true);
     try {
       await safeFetchJson(`/api/inbox/${inbox.id}/approve-view/${transfer.transferId}`, {
         method: 'POST',
       });
-      setPendingTransfer((prev) => (prev ? { ...prev, isViewApproved: true } : prev));
     } catch (err) {
       // quiet fallback
-    } finally {
-      setShowReviewModal(true);
     }
   };
+
+  // Auto-approve view as soon as pending transfer arrives or modal is opened
+  useEffect(() => {
+    if (pendingTransfer && showReviewModal && !pendingTransfer.isViewApproved && inbox?.id) {
+      handleApproveView(pendingTransfer);
+    }
+  }, [pendingTransfer?.transferId, showReviewModal, inbox?.id]);
 
   // Host confirms transfer: auto-downloads file/zip to host local device
   const handleConfirmTransfer = async (transfer) => {
@@ -506,38 +513,19 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
             {/* Content Preview Body (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               
-              {!pendingTransfer.isViewApproved ? (
-                <div className="p-6 rounded-3xl bg-slate-950/90 border border-amber-500/30 text-center space-y-4 shadow-xl">
-                  <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <ShieldCheck className="w-7 h-7" />
+              {/* Photo Previews */}
+              {imageFiles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-teal-400" />
+                      <span>{t.previewImage || 'Preview Photos'} ({imageFiles.length})</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span>{t.viewApprovedBadge || 'បានអនុញ្ញាតឱ្យមើលរូបភាព (Auto Approved)'}</span>
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-white mb-1">
-                      {t.photosProtectedTitle || '🔒 រូបភាពត្រូវបានការពារ (Photos Protected)'}
-                    </h3>
-                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      {t.photosProtectedDesc || 'សូមចុច "យល់ព្រមឱ្យមើលរូបភាព" ជាមុនសិន ដើម្បីទាញយករូបភាព និងមើលក្នុងកម្រិតច្បាស់ HD'}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleApproveView(pendingTransfer)}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-teal-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 hover:scale-105 transition cursor-pointer flex items-center justify-center gap-2 mx-auto"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>{t.approveAndUnlockBtn || '🔓 យល់ព្រមឱ្យមើលរូបភាព (Approve & Unlock Viewing)'}</span>
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {/* Photo Previews */}
-                  {imageFiles.length > 0 && (
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                        <ImageIcon className="w-4 h-4 text-teal-400" />
-                        <span>{t.previewImage || 'Preview Photos'} ({imageFiles.length})</span>
-                      </span>
 
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                         {imageFiles.map((img, idx) => {
@@ -597,9 +585,6 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                       ))}
                     </div>
                   </div>
-                </>
-              )}
-
             </div>
 
             {/* Action Buttons: Confirm Auto-Save OR Reject */}
