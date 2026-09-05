@@ -36,7 +36,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
   const pollTimerRef = useRef(null);
 
   // Fetch or generate persistent unique Personal Inbox
-  const initInbox = async (forceNew = false) => {
+  const initInbox = async () => {
     if (!user) return;
     try {
       setLoading(true);
@@ -44,16 +44,24 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const hostName = user.name || 'Host Device';
-      const endpoint = forceNew ? '/api/inbox/create' : '/api/inbox/my-qr';
-      const res = await safeFetchJson(endpoint, {
-        method: forceNew ? 'POST' : 'GET',
+      let res = await safeFetchJson('/api/inbox/my-qr', {
+        method: 'GET',
         headers,
-        ...(forceNew ? { body: JSON.stringify({ hostName, forceNew: true }) } : {}),
       });
 
-      if (res.ok && res.data.inbox) {
+      if (!res.ok || !res.data?.inbox) {
+        const hostName = user.name || 'Host Device';
+        res = await safeFetchJson('/api/inbox/create', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ hostName }),
+        });
+      }
+
+      if (res.ok && res.data?.inbox) {
         setInbox(res.data.inbox);
+      } else {
+        console.error('Failed to retrieve personal inbox:', res);
       }
     } catch (err) {
       console.warn('Inbox init error:', err);

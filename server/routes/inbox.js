@@ -90,17 +90,66 @@ function generateCode() {
   return code;
 }
 
+// Helper: Get existing or create new permanent inbox for user
+async function getOrCreateUserInbox(user, customHostName) {
+  const userId = user.id;
+  const existingInbox = db.findInboxByUserId(userId);
+  if (existingInbox) {
+    return existingInbox;
+  }
+
+  const userEmail = user.email;
+  const hostName = user.name || (customHostName || 'Host Device');
+
+  let inboxId;
+  let attempts = 0;
+  do {
+    inboxId = 'INB-' + generateCode();
+    attempts++;
+  } while (db.findInboxById(inboxId) && attempts < 20);
+
+  const localIp = getLocalIpAddress();
+  const port = process.env.PORT || 3001;
+  const sendUrl = `http://${localIp}:${port}/send-to/${inboxId}`;
+
+  const qrDataUrl = await QRCode.toDataURL(sendUrl, {
+    width: 400,
+    margin: 2,
+    color: {
+      dark: '#0f172a',
+      light: '#ffffff',
+    },
+  });
+
+  const secretToken = generateSecretToken();
+
+  const inbox = {
+    id: inboxId,
+    secretToken,
+    userId,
+    userEmail,
+    hostName,
+    sendUrl,
+    qrDataUrl,
+    status: 'waiting',
+    isPermanent: true,
+    expiresAt: null, // Unlimited Lifetime Expiry
+    pendingTransfers: [],
+    createdAt: new Date().toISOString(),
+    lastActivityAt: new Date().toISOString(),
+  };
+
+  db.createInbox(inbox);
+  return inbox;
+}
+
 // 1. Get or Create Permanent Unique Personal Inbox QR Code (Requires Auth)
 router.get('/my-qr', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const existingInbox = db.findInboxByUserId(userId);
-    if (existingInbox) {
-      return res.json({ inbox: existingInbox });
-    }
-    // If none exists, auto-create one
-    return res.redirect(307, '/api/inbox/create');
+    const inbox = await getOrCreateUserInbox(req.user);
+    return res.json({ inbox });
   } catch (err) {
+    console.error('my-qr error:', err);
     return res.status(500).json({ error: 'Failed to fetch personal receive inbox.' });
   }
 });
@@ -108,56 +157,7 @@ router.get('/my-qr', requireAuth, async (req, res) => {
 // Create/Fetch Permanent Personal Inbox QR Code (100% fixed per userId, Unlimited lifetime)
 router.post('/create', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userEmail = req.user.email;
-    const hostName = req.user.name || (req.body.hostName || 'Host Device');
-    
-    // Check if user already has a permanent personal inbox
-    const existingInbox = db.findInboxByUserId(userId);
-    if (existingInbox) {
-      return res.json({ inbox: existingInbox });
-    }
-
-    // Generate a permanent, unique inbox ID for the user
-    let inboxId;
-    let attempts = 0;
-    do {
-      inboxId = 'INB-' + generateCode();
-      attempts++;
-    } while (db.findInboxById(inboxId) && attempts < 20);
-
-    const localIp = getLocalIpAddress();
-    const port = process.env.PORT || 3001;
-    const sendUrl = `http://${localIp}:${port}/send-to/${inboxId}`;
-
-    const qrDataUrl = await QRCode.toDataURL(sendUrl, {
-      width: 400,
-      margin: 2,
-      color: {
-        dark: '#0f172a',
-        light: '#ffffff',
-      },
-    });
-
-    const secretToken = generateSecretToken();
-
-    const inbox = {
-      id: inboxId,
-      secretToken,
-      userId,
-      userEmail,
-      hostName,
-      sendUrl,
-      qrDataUrl,
-      status: 'waiting',
-      isPermanent: true,
-      expiresAt: null, // Unlimited Lifetime Expiry
-      pendingTransfers: [],
-      createdAt: new Date().toISOString(),
-      lastActivityAt: new Date().toISOString(),
-    };
-
-    db.createInbox(inbox);
+    const inbox = await getOrCreateUserInbox(req.user, req.body?.hostName);
     return res.status(201).json({ inbox });
   } catch (err) {
     console.error('Create inbox error:', err);
