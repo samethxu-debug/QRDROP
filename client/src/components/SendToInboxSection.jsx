@@ -36,9 +36,97 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
   const [sentTransferId, setSentTransferId] = useState(null);
   const [transferStatus, setTransferStatus] = useState(null); // 'pending_approval' | 'accepted' | 'rejected'
   
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isHighQuality, setIsHighQuality] = useState(true);
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
+  const [isRecordingLive, setIsRecordingLive] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+  const videoRef = useRef(null);
   const statusPollRef = useRef(null);
+
+  const startLiveCamera = async () => {
+    try {
+      setError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+      setCameraStream(stream);
+      setShowLiveCamera(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 100);
+    } catch (err) {
+      setError('Camera access failed or permission denied.');
+    }
+  };
+
+  const stopLiveCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowLiveCamera(false);
+    setIsRecordingLive(false);
+  };
+
+  const captureLivePhoto = async () => {
+    if (!videoRef.current || !cameraStream) return;
+    setIsRecordingLive(true);
+    try {
+      const videoEl = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 1280;
+      canvas.height = videoEl.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const timestamp = Date.now();
+      const imgBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 1.0));
+      const imgFile = new File([imgBlob], `LivePhoto_${timestamp}.jpg`, { type: 'image/jpeg' });
+
+      let mimeType = 'video/webm';
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      }
+
+      const mediaRecorder = new MediaRecorder(cameraStream, { mimeType });
+      const chunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const vidExt = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const vidBlob = new Blob(chunks, { type: mimeType });
+        const vidFile = new File([vidBlob], `LivePhoto_${timestamp}.${vidExt}`, { type: mimeType });
+
+        setFiles((prev) => [...prev, imgFile, vidFile]);
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviews((prev) => [...prev, { name: imgFile.name, url: reader.result, isLive: true }]);
+        };
+        reader.readAsDataURL(imgFile);
+
+        setIsRecordingLive(false);
+        stopLiveCamera();
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, 2000);
+    } catch (err) {
+      console.warn('Live photo capture error:', err);
+      setIsRecordingLive(false);
+    }
+  };
 
   // Fetch inbox details on load
   useEffect(() => {
@@ -69,6 +157,9 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
         const data = await res.json();
         if (data.status) {
           setTransferStatus(data.status);
+          if (data.transfer?.isViewApproved) {
+            setIsViewApproved(true);
+          }
           if (data.status === 'accepted' || data.status === 'rejected') {
             if (statusPollRef.current) clearInterval(statusPollRef.current);
           }
@@ -155,13 +246,17 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
     setPreviews((prev) => prev.filter((p) => p.name !== fileToRemove.name));
   };
 
-  const handleSendToHost = async (e) => {
+  const handleOpenConfirmModal = (e) => {
     e.preventDefault();
     if (files.length === 0) {
       setError('Please select at least one photo or file to send.');
       return;
     }
+    setShowConfirmModal(true);
+  };
 
+  const handleSendToHost = async () => {
+    setShowConfirmModal(false);
     setUploading(true);
     setUploadProgress(15);
     setError('');
@@ -175,6 +270,7 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
       if (detectedFolderName) formData.append('folderName', detectedFolderName);
       formData.append('senderName', senderName.trim() || 'Guest Phone');
       formData.append('note', note.trim());
+      formData.append('isHighQuality', isHighQuality ? 'true' : 'false');
 
       setUploadProgress(45);
 
@@ -248,6 +344,13 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                   <span>{t.waitingConfirmationBadge || 'Waiting for Confirmation'}</span>
                 </div>
+
+                {isViewApproved && (
+                  <div className="p-2.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
+                    <Sparkles className="w-4 h-4 text-teal-400" />
+                    <span>✓ {t.recipientIsViewing || 'អ្នកទទួលបានយល់ព្រមឱ្យពិនិត្យមើលរូបភាពហើយ (Recipient Approved Viewing & Reviewing Files)'}</span>
+                  </div>
+                )}
 
                 <h2 className="text-xl font-extrabold text-white">
                   {t.filesSentWaitingTitle || 'Files Sent to Recipient!'}
@@ -434,14 +537,14 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
               {t.uploadSubtitle}
             </p>
 
-            <div className="flex items-center justify-center gap-2.5">
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   fileInputRef.current?.click();
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-bold hover:bg-teal-500/20 transition"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-bold hover:bg-teal-500/20 transition cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-teal-400" />
                 <span>{t.browseFiles}</span>
@@ -453,10 +556,22 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
                   e.stopPropagation();
                   folderInputRef.current?.click();
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition cursor-pointer"
               >
                 <Archive className="w-4 h-4 text-emerald-400" />
                 <span>{t.browseFolder}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startLiveCamera();
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition cursor-pointer"
+              >
+                <Film className="w-4 h-4 text-purple-400" />
+                <span>{t.takeLivePhoto || 'ថត Live Photo ផ្ទាល់'}</span>
               </button>
             </div>
           </div>
@@ -479,6 +594,11 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
                   {previews.map((p, idx) => (
                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
                       <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
+                      {p.isLive && (
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-slate-950/80 border border-teal-500/40 text-[8px] font-bold text-teal-300">
+                          LIVE ⭕
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -521,6 +641,26 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
               <span>{t.transferDetails}</span>
             </h2>
 
+            {/* Quality Mode Selector */}
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                  <span>{t.highQualityBadge || 'គុណភាពដើម 100% (Original HD)'}</span>
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {t.highQualityDesc || 'រក្សារូបភាព 100% Full Resolution'}
+                </p>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={isHighQuality}
+                onChange={(e) => setIsHighQuality(e.target.checked)}
+                className="w-4 h-4 accent-teal-400 rounded cursor-pointer"
+              />
+            </div>
+
             {/* Sender Name */}
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1">
@@ -549,12 +689,12 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
               />
             </div>
 
-            {/* Send Button */}
+            {/* Open Confirmation Dialog Button */}
             <button
               type="button"
-              onClick={handleSendToHost}
+              onClick={handleOpenConfirmModal}
               disabled={uploading || files.length === 0}
-              className="w-full mt-3 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-extrabold text-sm shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2 transition disabled:opacity-40"
+              className="w-full mt-3 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-extrabold text-sm shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2 transition disabled:opacity-40 cursor-pointer"
             >
               {uploading ? (
                 <span>{t.uploading}</span>
@@ -570,6 +710,125 @@ export default function SendToInboxSection({ inboxId, t, onGoHome }) {
         </div>
 
       </div>
+
+      {/* Live Camera Modal for capturing Live Photo */}
+      {showLiveCamera && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 text-center">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Film className="w-4 h-4 text-purple-400" />
+                <span>{t.takeLivePhoto || 'ថត Live Photo ផ្ទាល់'}</span>
+              </h3>
+              <button
+                onClick={stopLiveCamera}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
+              <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+              {isRecordingLive && (
+                <div className="absolute inset-0 bg-purple-950/40 backdrop-blur-sm flex items-center justify-center text-purple-200 text-xs font-extrabold animate-pulse gap-2">
+                  <span className="w-3 h-3 rounded-full bg-purple-400 animate-ping" />
+                  <span>{t.recordingLive || 'Recording 2s motion clip...'}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={stopLiveCamera}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-xs text-slate-300 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={captureLivePhoto}
+                disabled={isRecordingLive}
+                className="px-5 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 text-xs font-black flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{t.captureLiveBtn || 'Capture Live Photo'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sender Confirmation Modal (Confirm Send Dialog) */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  {t.confirmSendTitle || 'Confirm Transfer to Recipient'}
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-1">
+                  {t.confirmSendSubtitle || 'Please review transfer details before sending'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+              <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">{t.recipientLabel || 'Recipient'}:</span>
+                <span className="font-extrabold text-teal-300">{inboxInfo?.hostName} ({inboxInfo?.id})</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">{t.itemsSummaryLabel || 'Items to Send'}:</span>
+                <span className="font-bold text-white">{files.length} {t.filesCount} ({formatFileSize(totalSize)})</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">{t.qualityLabel || 'Transfer Quality'}:</span>
+                <span className="font-bold text-emerald-400">⚡ {t.highQualityBadge || 'Original HD (Lossless 100%)'}</span>
+              </div>
+              {senderName && (
+                <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-400">Sender Name:</span>
+                  <span className="font-bold text-slate-200">{senderName}</span>
+                </div>
+              )}
+              {note && (
+                <div className="pt-1">
+                  <span className="text-slate-400 block mb-1">Note:</span>
+                  <p className="italic text-slate-300 bg-slate-900 p-2.5 rounded-xl border border-slate-800">"{note}"</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
+              >
+                {t.cancelSendBtn || 'Cancel / Edit'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendToHost}
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 text-xs font-black shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                <span>{t.confirmAndSendNowBtn || 'Confirm & Send Now'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

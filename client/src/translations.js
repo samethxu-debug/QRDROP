@@ -195,6 +195,26 @@ export const translations = {
     imageLoading: "កំពុងដំណើរការរូបភាព...",
     imageLoadError: "មិនអាចបង្ហាញរូបភាពនេះបានទេ",
     retryPreview: "ព្យាយាមមើលម្តងទៀត",
+
+    // Live Photo & High Quality & Sender Confirmation
+    highQualityBadge: "គុណភាពដើម 100% (Original HD)",
+    highQualityDesc: "រក្សារូបភាព និងវីដេអូ 100% Full Original Resolution ដោយមិនបង្រួម",
+    livePhotoBadge: "LIVE PHOTO ⭕",
+    livePhotoDetected: "បានរកឃើញ Live Photo (រូប + វីដេអូចលនា)",
+    takeLivePhoto: "ថត Live Photo ផ្ទាល់",
+    takeLivePhotoSubtitle: "ថតរូបភាព HD រួមជាមួយវីដេអូចលនា ២ វិនាទី",
+    captureLiveBtn: "ថត Live Photo (រូប + វីដេអូ)",
+    recordingLive: "កំពុងថតវីដេអូចលនា Live Photo...",
+    livePhotoMotionNotice: "ចុច ឬ Hover លើ LIVE ⭕ ដើម្បីមើលវីដេអូចលនា",
+    confirmSendTitle: "បញ្ជាក់ការផ្ញើទៅកាន់អ្នកទទួល",
+    confirmSendSubtitle: "សូមពិនិត្យមើលព័ត៌មានលម្អិត និងគុណភាពឯកសារមុននឹងបញ្ជូន",
+    recipientLabel: "អ្នកទទួល",
+    itemsSummaryLabel: "សរុបឯកសារត្រូវផ្ញើ",
+    qualityLabel: "កម្រិតគុណភាព",
+    confirmAndSendNowBtn: "បញ្ជាក់ & ផ្ញើទៅកាន់អ្នកទទួល",
+    cancelSendBtn: "ត្រឡប់ទៅកែប្រែ",
+    persistentQRBadge: "QR Code ផ្ទាល់ខ្លួនថេរ (មិនមានស្ទួន)",
+    persistentQRDesc: "QR Code នេះជារបស់អ្នកផ្ទាល់ មិនផ្លាស់ប្តូរឡើយ ដើម្បីងាយស្រួលឱ្យអ្នកដទៃផ្ញើមកកាន់អ្នក",
   },
 
 
@@ -393,6 +413,26 @@ export const translations = {
     imageLoading: "Loading image...",
     imageLoadError: "Unable to display this image preview",
     retryPreview: "Retry Preview",
+
+    // Live Photo & High Quality & Sender Confirmation
+    highQualityBadge: "100% Original High Quality (Lossless HD)",
+    highQualityDesc: "Preserves photos and videos at 100% full original resolution without compression",
+    livePhotoBadge: "LIVE PHOTO ⭕",
+    livePhotoDetected: "Live Photo detected with motion video clip",
+    takeLivePhoto: "Take Live Photo",
+    takeLivePhotoSubtitle: "Capture HD image with a 2-second motion video loop",
+    captureLiveBtn: "Capture Live Photo (Image + Motion)",
+    recordingLive: "Recording 2-second Live Photo motion...",
+    livePhotoMotionNotice: "Hover or tap LIVE ⭕ to play motion video",
+    confirmSendTitle: "Confirm Transfer to Recipient",
+    confirmSendSubtitle: "Please review transfer details and file quality before sending",
+    recipientLabel: "Recipient",
+    itemsSummaryLabel: "Items to Send",
+    qualityLabel: "Transfer Quality",
+    confirmAndSendNowBtn: "Confirm & Send Now",
+    cancelSendBtn: "Cancel / Edit",
+    persistentQRBadge: "Unique Persistent Personal QR",
+    persistentQRDesc: "This QR code is uniquely bound to your account and stays permanent for easy receiving",
   }
 };
 

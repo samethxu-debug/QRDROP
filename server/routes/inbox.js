@@ -90,14 +90,37 @@ function generateCode() {
   return code;
 }
 
-// 1. Create a FRESH, unique Personal Inbox QR Code (Requires Google Login)
+// 1. Get or Create Persistent Unique Personal Inbox QR Code (Requires Auth)
+router.get('/my-qr', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const existingInbox = db.findInboxByUserId(userId);
+    if (existingInbox) {
+      return res.json({ inbox: existingInbox });
+    }
+    // If none exists, auto-create one
+    return res.redirect(307, '/api/inbox/create');
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch personal receive inbox.' });
+  }
+});
+
+// Create/Fetch Unique Personal Inbox QR Code
 router.post('/create', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userEmail = req.user.email;
     const hostName = req.user.name || (req.body.hostName || 'Host Device');
     
-    // Always generate a fresh, unique inbox ID so each QR code is distinct
+    // Unless forceNew is requested, preserve existing unique personal inbox for user
+    if (!req.body.forceNew) {
+      const existingInbox = db.findInboxByUserId(userId);
+      if (existingInbox) {
+        return res.json({ inbox: existingInbox });
+      }
+    }
+
+    // Always generate a fresh, unique inbox ID so each user's QR code is distinct
     let inboxId;
     let attempts = 0;
     do {
@@ -134,7 +157,12 @@ router.post('/create', requireAuth, async (req, res) => {
       lastActivityAt: new Date().toISOString(),
     };
 
-    db.createInbox(inbox);
+    const existingInbox = db.findInboxByUserId(userId);
+    if (existingInbox && req.body.forceNew) {
+      db.updateInbox(existingInbox.id, inbox);
+    } else {
+      db.createInbox(inbox);
+    }
 
     return res.status(201).json({ inbox });
   } catch (err) {
@@ -232,17 +260,44 @@ router.post('/:inboxId/upload', optionalAuth, inboxUploadLimiter, upload.array('
       }
     }
 
-    const { senderName, title, folderName, note } = req.body;
+    const { senderName, title, folderName, note, isHighQuality } = req.body;
 
-    const fileRecords = req.files.map((file) => ({
-      id: uuidv4(),
-      originalName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
-      filename: file.filename,
-      size: file.size,
-      mimetype: file.mimetype,
-      isImage: file.mimetype.startsWith('image/'),
-      uploadedAt: new Date().toISOString(),
-    }));
+    const fileRecords = req.files.map((file) => {
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      const ext = path.extname(originalName).toLowerCase();
+      const isImage = file.mimetype.startsWith('image/') || ['.heic', '.heif', '.jpg', '.jpeg', '.png', '.webp'].includes(ext);
+      const isVideo = file.mimetype.startsWith('video/') || ['.mov', '.mp4', '.m4v', '.webm'].includes(ext);
+      return {
+        id: uuidv4(),
+        originalName,
+        filename: file.filename,
+        size: file.size,
+        mimetype: file.mimetype,
+        isImage,
+        isVideo,
+        uploadedAt: new Date().toISOString(),
+      };
+    });
+
+    // Auto-detect and pair Live Photo matching components (e.g. IMG_0001.JPG + IMG_0001.MOV)
+    fileRecords.forEach((file) => {
+      if (file.isImage) {
+        const dotIdx = file.originalName.lastIndexOf('.');
+        const baseName = dotIdx > 0 ? file.originalName.substring(0, dotIdx).toLowerCase() : file.originalName.toLowerCase();
+        const pairedVideo = fileRecords.find((v) => {
+          if (!v.isVideo) return false;
+          const vDotIdx = v.originalName.lastIndexOf('.');
+          const vBaseName = vDotIdx > 0 ? v.originalName.substring(0, vDotIdx).toLowerCase() : v.originalName.toLowerCase();
+          return vBaseName === baseName;
+        });
+
+        if (pairedVideo) {
+          file.isLivePhoto = true;
+          file.pairedLiveVideoId = pairedVideo.id;
+          pairedVideo.isLiveVideoComponent = true;
+        }
+      }
+    });
 
     let finalTitle = title ? title.trim() : '';
     if (!finalTitle) {
@@ -262,6 +317,7 @@ router.post('/:inboxId/upload', optionalAuth, inboxUploadLimiter, upload.array('
       title: finalTitle,
       folderName: folderName || '',
       note: note ? note.trim() : '',
+      isHighQuality: isHighQuality !== 'false',
       files: fileRecords,
       totalSize: fileRecords.reduce((acc, f) => acc + f.size, 0),
       status: 'pending_approval', // pending_approval | accepted | rejected
@@ -394,6 +450,33 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
     return fs.createReadStream(filePath).pipe(res);
   } catch (err) {
     return res.status(500).send('Error streaming file');
+  }
+});
+
+// Approve Viewing for pending transfer (triggered when user clicks View)
+router.post('/:inboxId/approve-view/:transferId', (req, res) => {
+  try {
+    const { inboxId, transferId } = req.params;
+    const inbox = db.findInboxById(inboxId);
+    if (!inbox) return res.status(404).json({ error: 'Inbox not found.' });
+
+    const transfers = inbox.pendingTransfers || [];
+    const transfer = transfers.find((t) => t.transferId === transferId);
+    if (!transfer) return res.status(404).json({ error: 'Transfer not found.' });
+
+    transfer.isViewApproved = true;
+    transfer.viewApprovedAt = new Date().toISOString();
+
+    db.updateInbox(inboxId, {
+      pendingTransfers: transfers,
+    });
+
+    return res.json({
+      message: 'Viewing approved.',
+      transfer,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to approve viewing.' });
   }
 });
 

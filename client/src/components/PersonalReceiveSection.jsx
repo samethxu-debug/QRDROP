@@ -35,8 +35,8 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
   const [showReviewModal, setShowReviewModal] = useState(true);
   const pollTimerRef = useRef(null);
 
-  // Initialize or generate a fresh unique Inbox
-  const initInbox = async () => {
+  // Fetch or generate persistent unique Personal Inbox
+  const initInbox = async (forceNew = false) => {
     if (!user) return;
     try {
       setLoading(true);
@@ -45,10 +45,11 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const hostName = user.name || 'Host Device';
-      const res = await safeFetchJson('/api/inbox/create', {
-        method: 'POST',
+      const endpoint = forceNew ? '/api/inbox/create' : '/api/inbox/my-qr';
+      const res = await safeFetchJson(endpoint, {
+        method: forceNew ? 'POST' : 'GET',
         headers,
-        body: JSON.stringify({ hostName }),
+        ...(forceNew ? { body: JSON.stringify({ hostName, forceNew: true }) } : {}),
       });
 
       if (res.ok && res.data.inbox) {
@@ -63,7 +64,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
 
   useEffect(() => {
     if (user) {
-      initInbox();
+      initInbox(false);
     } else {
       setInbox(null);
     }
@@ -115,6 +116,24 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
     if (file.mimetype?.includes('pdf') || file.mimetype?.includes('document')) return <FileText className="w-5 h-5 text-blue-400" />;
     if (file.mimetype?.includes('zip') || file.mimetype?.includes('rar')) return <Archive className="w-5 h-5 text-amber-400" />;
     return <File className="w-5 h-5 text-slate-400" />;
+  };
+
+  // Host approves viewing transfer when host clicks View
+  const handleApproveView = async (transfer) => {
+    if (!inbox?.id || !transfer?.transferId) {
+      setShowReviewModal(true);
+      return;
+    }
+    try {
+      await safeFetchJson(`/api/inbox/${inbox.id}/approve-view/${transfer.transferId}`, {
+        method: 'POST',
+      });
+      setPendingTransfer((prev) => (prev ? { ...prev, isViewApproved: true } : prev));
+    } catch (err) {
+      // quiet fallback
+    } finally {
+      setShowReviewModal(true);
+    }
   };
 
   // Host confirms transfer: auto-downloads file/zip to host local device
@@ -263,11 +282,11 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
 
           <button
             type="button"
-            onClick={() => setShowReviewModal(true)}
+            onClick={() => handleApproveView(pendingTransfer)}
             className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-teal-500 hover:from-amber-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-105 transition cursor-pointer flex items-center justify-center gap-2 shrink-0"
           >
             <Eye className="w-4 h-4" />
-            <span>{t.reviewAndConfirmBtn || 'Review & Confirm'}</span>
+            <span>{pendingTransfer.isViewApproved ? (t.viewApprovedBadge || 'បានយល់ព្រមឱ្យពិនិត្យមើល (View Approved)') : (t.reviewAndConfirmBtn || 'Review & Confirm')}</span>
           </button>
         </div>
       )}
@@ -340,7 +359,7 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
               <button
                 type="button"
                 disabled={loading}
-                onClick={initInbox}
+                onClick={() => initInbox(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-teal-300 border border-slate-800 text-xs font-semibold transition cursor-pointer"
                 title="Generate a fresh new QR code"
               >
@@ -348,6 +367,10 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                 <span>{t.generateNewQR || 'បង្កើត QR Code ថ្មី'}</span>
               </button>
             </div>
+
+            <p className="text-[11px] text-teal-400/90 font-medium pt-1">
+              ✓ {t.persistentQRBadge || 'QR Code ផ្ទាល់ខ្លួនថេរ (មិនមានស្ទួន)'}
+            </p>
           </div>
 
         </div>
@@ -479,6 +502,17 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
               </p>
             )}
 
+            {/* High Quality & Live Photo Badge Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-xs">
+              <span className="font-bold text-teal-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t.highQualityBadge || 'គុណភាពដើម 100% (Original HD)'}</span>
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {t.highQualityDesc || 'រក្សារូបភាព 100% Full Resolution មិនបង្រួម'}
+              </span>
+            </div>
+
             {/* Content Preview Body (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               
@@ -491,25 +525,34 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
                   </span>
 
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                    {imageFiles.map((img, idx) => (
-                      <div
-                        key={img.id}
-                        onClick={() => setLightboxIndex(idx)}
-                        className="group relative aspect-square rounded-2xl overflow-hidden bg-transparency-grid border border-slate-800 hover:border-teal-500 cursor-pointer transition"
-                      >
-                        <img
-                          src={`/api/inbox/${inbox.id}/preview/${img.id}`}
-                          alt={img.originalName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                          onError={(e) => {
-                            e.target.style.opacity = '0';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-teal-300">
-                          <Eye className="w-4 h-4" />
+                    {imageFiles.map((img, idx) => {
+                      const hasLiveVideo = Boolean(img.isLivePhoto || img.pairedLiveVideoId);
+                      return (
+                        <div
+                          key={img.id}
+                          onClick={() => setLightboxIndex(idx)}
+                          className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 hover:border-teal-500 cursor-pointer transition shadow-md"
+                        >
+                          <img
+                            src={`/api/inbox/${inbox.id}/preview/${img.id}`}
+                            alt={img.originalName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            onError={(e) => {
+                              e.target.style.opacity = '0';
+                            }}
+                          />
+                          {hasLiveVideo && (
+                            <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-slate-950/85 border border-teal-500/40 text-[9px] font-extrabold text-teal-300 flex items-center gap-1 shadow-md backdrop-blur-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping" />
+                              <span>LIVE</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-teal-300">
+                            <Eye className="w-4 h-4" />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

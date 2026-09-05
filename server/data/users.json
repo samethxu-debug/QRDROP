@@ -16,7 +16,7 @@
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:07:07.736Z",
-    "lastLoginAt": "2026-09-01T09:31:57.579Z",
+    "lastLoginAt": "2026-09-04T09:17:50.418Z",
     "role": "admin",
     "isAdmin": true
   },
@@ -29,7 +29,7 @@
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:07:16.605Z",
-    "lastLoginAt": "2026-09-01T09:31:57.349Z"
+    "lastLoginAt": "2026-09-05T05:59:05.248Z"
   },
   {
     "id": "edbc7afd-ae61-4853-b221-a937b827810d",
@@ -40,7 +40,7 @@
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:19:24.703Z",
-    "lastLoginAt": "2026-09-01T09:31:57.851Z"
+    "lastLoginAt": "2026-09-05T05:59:00.172Z"
   },
   {
     "id": "4a5a50fb-bbe3-44ae-a790-af4a92e0efe8",
@@ -52,7 +52,7 @@
     "isAdmin": true,
     "authProvider": "password",
     "createdAt": "2026-09-01T09:25:44.751Z",
-    "lastLoginAt": "2026-09-01T09:37:22.603Z"
+    "lastLoginAt": "2026-09-04T09:19:04.407Z"
   },
   {
     "id": "3fe0853e-778c-4b20-9342-2ca0cac81262",
@@ -65,7 +65,7 @@
     "isAdmin": false,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:25:44.770Z",
-    "lastLoginAt": "2026-09-01T09:31:58.480Z",
+    "lastLoginAt": "2026-09-04T09:17:58.919Z",
     "isRestricted": false,
     "restrictedAt": null
   },
@@ -81,5 +81,18 @@
     "authProvider": "google",
     "createdAt": "2026-09-01T09:29:30.702Z",
     "lastLoginAt": "2026-09-01T09:29:30.702Z"
+  },
+  {
+    "id": "c3614cb3-a029-49ac-b80c-63cdbb684eaa",
+    "googleId": "g_1788513629829",
+    "name": "API Tester",
+    "username": "testapi",
+    "email": "test.api@gmail.com",
+    "picture": null,
+    "role": "user",
+    "isAdmin": false,
+    "authProvider": "google",
+    "createdAt": "2026-09-04T09:20:29.829Z",
+    "lastLoginAt": "2026-09-04T09:20:29.829Z"
   }
 ]

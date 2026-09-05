@@ -25,36 +25,48 @@ async function testInboxFlow() {
   const googleData = await googleRes.json();
   const token = googleData.token;
 
-  // 3. Create First Unique Inbox
-  const createRes1 = await fetch('http://localhost:3001/api/inbox/create', {
-    method: 'POST',
+  // 3. Get Persistent Personal QR (my-qr)
+  const getMyQrRes = await fetch('http://localhost:3001/api/inbox/my-qr', {
+    method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ hostName: 'Host Tester 1' }),
   });
-  const createData1 = await createRes1.json();
-  const inbox1 = createData1.inbox;
-  console.log(`[Step 2] First Unique Inbox created: ID = ${inbox1?.id}`);
+  const getMyQrData = await getMyQrRes.json();
+  const inbox1 = getMyQrData.inbox;
+  console.log(`[Step 2] Persistent Unique Personal Inbox fetched: ID = ${inbox1?.id}`);
 
-  // 4. Create Second Unique Inbox (Generate New QR)
+  // Fetching again returns SAME personal QR ("don't change qr personal")
+  const getMyQrRes2 = await fetch('http://localhost:3001/api/inbox/my-qr', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  const getMyQrData2 = await getMyQrRes2.json();
+  const inbox1_repeat = getMyQrData2.inbox;
+  if (inbox1.id !== inbox1_repeat.id) {
+    throw new Error('Step 2 Failed: Personal QR code changed unexpectedly!');
+  }
+  console.log(`         [VERIFIED] Personal QR code is preserved: ${inbox1.id} === ${inbox1_repeat.id}`);
+
+  // 4. Force Create Second Unique Inbox (Generate New QR)
   const createRes2 = await fetch('http://localhost:3001/api/inbox/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ hostName: 'Host Tester 2' }),
+    body: JSON.stringify({ hostName: 'Host Tester 2', forceNew: true }),
   });
   const createData2 = await createRes2.json();
   const inbox2 = createData2.inbox;
-  console.log(`[Step 3] Second Fresh Unique Inbox created: ID = ${inbox2?.id}`);
+  console.log(`[Step 3] Second Fresh Unique Inbox created (forceNew): ID = ${inbox2?.id}`);
 
   if (!inbox1?.id || !inbox2?.id || inbox1.id === inbox2.id) {
-    throw new Error('Step 3 Failed: Personal QR codes were not unique/fresh!');
+    throw new Error('Step 3 Failed: Personal QR codes were not unique!');
   }
-  console.log(`         [VERIFIED] QR Code 1 (${inbox1.id}) != QR Code 2 (${inbox2.id}) -> Always Fresh & Unique!`);
+  console.log(`         [VERIFIED] Unique QR Code 1 (${inbox1.id}) != QR Code 2 (${inbox2.id})`);
 
   // 5. Prohibited file upload to inbox
   fs.writeFileSync('virus.exe', 'MZ binary');
@@ -70,34 +82,44 @@ async function testInboxFlow() {
   fs.unlinkSync('virus.exe');
   if (exeRes.status !== 400) throw new Error('Step 4 Failed: Prohibited file was not blocked in inbox');
 
-  // 6. Sender uploads valid files to host inbox
-  fs.writeFileSync('photo_vacation.jpg', 'image mock content');
+  // 6. Sender uploads valid files & Live Photo pair to host inbox
+  fs.writeFileSync('IMG_0001.JPG', 'image mock content');
+  fs.writeFileSync('IMG_0001.MOV', 'video mock content');
   fs.writeFileSync('document.pdf', 'pdf mock content');
 
   const uploadForm = new FormData();
-  uploadForm.append('files', new Blob([fs.readFileSync('photo_vacation.jpg')], { type: 'image/jpeg' }), 'photo_vacation.jpg');
+  uploadForm.append('files', new Blob([fs.readFileSync('IMG_0001.JPG')], { type: 'image/jpeg' }), 'IMG_0001.JPG');
+  uploadForm.append('files', new Blob([fs.readFileSync('IMG_0001.MOV')], { type: 'video/quicktime' }), 'IMG_0001.MOV');
   uploadForm.append('files', new Blob([fs.readFileSync('document.pdf')], { type: 'application/pdf' }), 'document.pdf');
   uploadForm.append('senderName', 'Guest Phone');
-  uploadForm.append('title', 'Vacation Photos');
+  uploadForm.append('title', 'Vacation Live Photos');
+  uploadForm.append('isHighQuality', 'true');
 
   const uploadRes = await fetch(`http://localhost:3001/api/inbox/${inbox2.id}/upload`, {
     method: 'POST',
     body: uploadForm,
   });
   const uploadData = await uploadRes.json();
-  console.log(`[Step 5] Sender uploaded files: status = ${uploadRes.status} (Expected 201)`);
+  console.log(`[Step 5] Sender uploaded files with Live Photo: status = ${uploadRes.status} (Expected 201)`);
   console.log(`         Transfer ID = ${uploadData.transferId}`);
 
-  fs.unlinkSync('photo_vacation.jpg');
+  fs.unlinkSync('IMG_0001.JPG');
+  fs.unlinkSync('IMG_0001.MOV');
   fs.unlinkSync('document.pdf');
 
   const transferId = uploadData.transferId;
 
-  // 7. Host checks status
+  // 7. Host checks status & verifies Live Photo pairing
   const statusRes = await fetch(`http://localhost:3001/api/inbox/${inbox2.id}/status`);
   const statusData = await statusRes.json();
   const pending = statusData.pendingTransfers.find((t) => t.transferId === transferId);
   console.log(`[Step 6] Host sees incoming transfer: status = ${pending?.status} (Expected pending_approval)`);
+
+  const liveImg = pending.files.find((f) => f.originalName === 'IMG_0001.JPG');
+  if (!liveImg?.isLivePhoto) {
+    throw new Error('Step 6 Failed: Live Photo IMG_0001.JPG was not automatically paired with IMG_0001.MOV');
+  }
+  console.log(`         [VERIFIED] Live Photo automatically paired: ${liveImg.originalName} -> pairedLiveVideoId = ${liveImg.pairedLiveVideoId}`);
 
   // 8. Host confirms transfer
   const confirmRes = await fetch(`http://localhost:3001/api/inbox/${inbox2.id}/confirm/${transferId}`, {

@@ -26,6 +26,11 @@ export default function ImageLightbox({
   const [bgMode, setBgMode] = useState('grid'); // 'grid' | 'light' | 'dark'
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isPlayingLive, setIsPlayingLive] = useState(false);
+
+  useEffect(() => {
+    setIsPlayingLive(false);
+  }, [currentIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -60,6 +65,11 @@ export default function ImageLightbox({
     ? customDownloadUrl(currentImage) 
     : `/api/shares/${shareCode}/download/${currentImage.id}`;
 
+  const hasLiveVideo = Boolean(currentImage.isLivePhoto || currentImage.pairedLiveVideoId);
+  const liveVideoUrl = currentImage.pairedLiveVideoId && shareCode
+    ? `/api/inbox/${shareCode}/preview/${currentImage.pairedLiveVideoId}`
+    : null;
+
   const cycleBgMode = () => {
     if (bgMode === 'grid') setBgMode('light');
     else if (bgMode === 'light') setBgMode('dark');
@@ -91,9 +101,29 @@ export default function ImageLightbox({
           <ImageIcon className="w-4 h-4 text-teal-400 shrink-0" />
           <span className="truncate">{currentImage.originalName}</span>
           <span className="text-slate-400 font-mono shrink-0">({currentIndex + 1} / {images.length})</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold shrink-0 hidden sm:inline">
+            ⚡ 100% HD Original
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Live Photo Toggle Button */}
+          {hasLiveVideo && (
+            <button
+              type="button"
+              onClick={() => setIsPlayingLive(!isPlayingLive)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black transition cursor-pointer ${
+                isPlayingLive
+                  ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900 hover:bg-slate-800 text-teal-300 border-teal-500/40'
+              }`}
+              title={t.livePhotoMotionNotice || "Toggle Live Photo motion video playback"}
+            >
+              <span className={`w-2 h-2 rounded-full ${isPlayingLive ? 'bg-slate-950 animate-ping' : 'bg-teal-400 animate-pulse'}`} />
+              <span>LIVE ⭕</span>
+            </button>
+          )}
+
           {/* Background Mode Switcher (Checkerboard / Light / Dark) - only for images */}
           {!isVideo && (
             <button
@@ -198,14 +228,15 @@ export default function ImageLightbox({
             </div>
           </div>
 
-        ) : isVideo ? (
+        ) : (isPlayingLive || isVideo) ? (
           <div className="relative p-2 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 max-w-full max-h-[75vh] flex items-center justify-center bg-slate-950">
             <video
-              key={previewUrl}
-              src={previewUrl}
+              key={isPlayingLive ? (liveVideoUrl || previewUrl) : previewUrl}
+              src={isPlayingLive ? (liveVideoUrl || previewUrl) : previewUrl}
               controls
               autoPlay
               playsInline
+              loop={isPlayingLive}
               onLoadedData={() => setLoading(false)}
               onError={() => {
                 setLoading(false);
