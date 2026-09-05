@@ -156,25 +156,39 @@ router.post('/upload', requireAuth, uploadLimiter, upload.array('files', 50), as
         });
       }
 
-      // 2. If it is a ZIP archive, inspect its contents entry-by-entry
+      // 2. If it is a ZIP archive, inspect entries and skip restricted files
       if (cleanOriginalName.toLowerCase().endsWith('.zip')) {
         try {
           const zip = new AdmZip(filePath);
           const zipEntries = zip.getEntries();
+          const skippedEntries = [];
+          let approvedEntryCount = 0;
+
           for (const entry of zipEntries) {
             if (entry.isDirectory) continue;
             if (isRestrictedExtension(entry.entryName)) {
-              cleanupFiles(req.files);
+              skippedEntries.push(entry.entryName);
+              zip.deleteFile(entry);
               logSecurityEvent({
-                type: 'malware_blocked',
+                type: 'malware_skipped',
                 ip: req.ip,
                 endpoint: '/api/shares/upload',
-                details: `Blocked archive containing: ${entry.entryName}`,
+                details: `Skipped restricted entry in zip archive: ${entry.entryName}`,
               });
+            } else {
+              approvedEntryCount++;
+            }
+          }
+
+          if (skippedEntries.length > 0) {
+            if (approvedEntryCount === 0) {
+              cleanupFiles(req.files);
               return res.status(400).json({
-                error: `Security Alert: ZIP archive "${cleanOriginalName}" contains a prohibited file "${entry.entryName}". Upload rejected.`
+                error: `All files in ZIP archive "${cleanOriginalName}" were restricted and skipped (${skippedEntries.join(', ')}). Upload aborted.`
               });
             }
+            // Save updated ZIP archive containing only approved files
+            zip.writeZip(filePath);
           }
         } catch (zipErr) {
           console.warn('Could not inspect zip file:', cleanOriginalName, zipErr.message);

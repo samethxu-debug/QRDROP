@@ -9,14 +9,14 @@
   },
   {
     "id": "994f084f-5a66-4a94-b718-949bd1c3d7ca",
-    "googleId": "google_test_12345",
-    "name": "Korb Sameth",
+    "googleId": "admin_user_001",
+    "name": "Korb Sameth (Founder & Admin)",
     "username": "korbsameth",
     "email": "korb.sameth@gmail.com",
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:07:07.736Z",
-    "lastLoginAt": "2026-09-04T09:17:50.418Z",
+    "lastLoginAt": "2026-09-05T09:05:31.734Z",
     "role": "admin",
     "isAdmin": true
   },
@@ -29,7 +29,7 @@
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:07:16.605Z",
-    "lastLoginAt": "2026-09-05T06:08:55.192Z"
+    "lastLoginAt": "2026-09-05T06:47:49.546Z"
   },
   {
     "id": "edbc7afd-ae61-4853-b221-a937b827810d",
@@ -40,7 +40,7 @@
     "picture": null,
     "authProvider": "google",
     "createdAt": "2026-09-01T09:19:24.703Z",
-    "lastLoginAt": "2026-09-05T06:08:49.104Z"
+    "lastLoginAt": "2026-09-05T06:47:20.402Z"
   },
   {
     "id": "4a5a50fb-bbe3-44ae-a790-af4a92e0efe8",
@@ -94,5 +94,18 @@
     "authProvider": "google",
     "createdAt": "2026-09-04T09:20:29.829Z",
     "lastLoginAt": "2026-09-04T09:20:29.829Z"
+  },
+  {
+    "id": "17d397ab-80ff-421e-940c-27b0ca724eea",
+    "googleId": "audit_user_1001",
+    "name": "Audit Tester",
+    "username": "audittester",
+    "email": "audit.tester@gmail.com",
+    "picture": null,
+    "role": "user",
+    "isAdmin": false,
+    "authProvider": "google",
+    "createdAt": "2026-09-05T06:49:46.801Z",
+    "lastLoginAt": "2026-09-05T06:49:46.801Z"
   }
 ]

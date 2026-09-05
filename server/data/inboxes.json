@@ -1,5 +1,237 @@
 [
   {
+    "id": "INB-GHZ23Y",
+    "secretToken": "e1b65430a299537e5e4cab1d0e3cf740ef91309496cd100a",
+    "userId": "994f084f-5a66-4a94-b718-949bd1c3d7ca",
+    "userEmail": "korb.sameth@gmail.com",
+    "hostName": "Korb Sameth (Founder & Admin)",
+    "sendUrl": "http://192.168.18.16:3001/send-to/INB-GHZ23Y",
+    "qrDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAAAqlSURBVO3BwZEsuJElwMewEgBH6AD9RYEOOEIDLgXY6TXEdHLzd7n7v/79HwGARxUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADT/5Lxhzhb/XPTsvxlz5pHt2fpsxV17cs/NizJUX9+x80pgrL+7ZeTHmCn+ve3Y+qQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMNPvtA9O7/JmCvf5p6dF2OufJN7dl6MufLqnp1vMubKJ92z823u2flNxlz5JhUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABp+8g8w5so3uWfn29yz803u2Xkx5sqLMVd+m3t2Xoy58tuMufJN7tn5k1UAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGj4Cb/CmCufdM/OizFXXtyz82LMlU8bc+XFPTsv7tn5pHt24H+jAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAw0/4Fe7ZeTHmyosxV77JPTufNubKizFXXtyz82LMlRf37LwYc+XFPTv8s1UAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGj4yT/APTvwvzHmyqt7dr7JPTsvxlz5be7Z4e9TAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACg4SdfaMwV/l5jrry4Z+fFmCsv7tl5MebKi3t2vs2YKy/u2Xkx5sqLe3ZejLnybcZc4f+fCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaPjJf8E9O/yz3bPzYswV/tqYK7/JPTv8WSoA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADT85L9gzJUX9+y8GHPlk+7ZeTHmyre5Z4f/2T073+aenRdjrrwYc+XFPTufNObKq3t2PmnMlRf37LwYc+WT7tn5pAoANFQAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0/+Qe4Z+dPds8Of+2enW8z5sonjbny4p6dF2OuvBhz5duMufJJ9+x80j07L8Zc+SYVAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGioAEBDBQAafvIPMObKN7ln58WYK6/u2fkmY668uGfnm4y58uqenRdjrry4Z+eT7tn5pDFXPu2enW8y5son3bPzTSoA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADT85AuNufJJ9+x80pgrL+7Z+bQxV17cs/NJY658k3t2Xo258uKenRdjrnyTe3Ze3LPzpxtz5cU9O5805sqLe3Y+qQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMNPvtA9O5805son3bPzYsyVT7tn58WYK9/knp0/3ZgrL+7ZeTHmyot7dr7JmCvf5p6dF2OuvLhn58U9O9+kAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAw0++0Jgrn3TPzje5Z+fTxlx5cc/OizFXXtyz82LMlT/dPTt/sjFXXtyz8+KenVdjrvzJxlz5pHt2PqkCAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGioAEDDT/h/GnPlxT07L8ZceXXPzot7dl6MufLinp0XY6580j07L8Zc+bQxV17cs/Pinp0XY668uGfnxZgr3+aenRdjrry4Z+fFmCt/sgoANFQAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGj417//I19mzJUX9+y8GHPlxT0732bMlU+6Z+eTxlz5JvfsvBpz5cU9O7/JmCufds/OizFXXtyz82LMlU+6Z+ebVACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaPjXv/8jf7gxV17cs/NizJUX9+y8GHPl1T07L8Zc+Sb37PDXxlx5cc/OJ4258kn37HzamCufdM/OizFXXtyz800qANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0/OQXGnPlk8ZceXHPzp/unp1PGnPlk+7ZeTXmyot7dr7JmCsv7tn5be7Z4X9WAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACg4Sf/BWOuvLhn55vcs/NizJUXY668umfnk+7ZeTHmyje5Z+e3GXPlxT07L8ZceXHPzqeNufLinp0XY6580j07f7IKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgAN//r3f4S/NObKi3t2/nRjrnyTe3Z+mzFXvsk9O3+6MVc+6Z6d36QCAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGioAEDDT77QmCsv7tn5k4258m3u2fkmY6580j07r8Zc+aR7dl6MufLinp0XY67w18ZceXHPzp+sAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAw7/+/R/hH2/MFf5e9+y8GHPlk+7ZeTHmyifds/Ntxlz5pHt2Xoy58kn37HxSBQAaKgDQUAGAhgoANFQAoKECAA0VAGioAEBDBQAaKgDQUAGAhp/8F4y5wt/rnp1vcs/ONxlz5cU9O6/GXPkmY678ycZceXXPzm9yz843qQBAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIaffKF7dn6TMVd+mzFXXtyz8+KenW9zz84njbnyJ7tn59vcs/NizJUX9+y8GHPlxT07n1QBgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKDhJ/8AY658k3t2vs09O5805sqLe3ZejLny4p6dF2OufNqYKy/u2fmTjbnypxtz5Zvcs/NNKgDQUAGAhgoANFQAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANPyEX2HMld9kzJVPu2fnN7ln55PGXHl1z843GXPlN6kAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANDwE/i/uGfnxZgrL8Zc+aR7dr7NmCufdM/OJ4258uKenU8bc+XFPTsvxlz5JmOuvLhn55MqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0/OQf4J4d/to9Oy/GXHlxz84njbnyYsyVb3PPzosxVz5pzJUX9+y8GHPlxT073+aenU8ac+XFPTvfpAIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMNPvtCYK/y9xlx5cc/Ob3LPzqsxV77JmCsv7tnh7zXmym9SAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACg4V///o8AwKMKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0PB/ADXOPg5gf68dAAAAAElFTkSuQmCC",
+    "status": "waiting",
+    "isPermanent": true,
+    "expiresAt": null,
+    "pendingTransfers": [
+      {
+        "transferId": "687bd44f-521c-43dd-997a-fb764d5b8e11",
+        "senderUserId": null,
+        "senderName": "Guest Sender",
+        "title": "Project Photos & Reports",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "0c1961b7-2c55-46c2-aba1-ccf52daed1fb",
+            "originalName": "sample_photo.jpg",
+            "filename": "inbox-1788599131775-a7f0f310.jpg",
+            "size": 20,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T09:05:31.786Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "01edf3d3-e893-43aa-9c9a-2eb0f679d847"
+          },
+          {
+            "id": "01edf3d3-e893-43aa-9c9a-2eb0f679d847",
+            "originalName": "sample_photo.mov",
+            "filename": "inbox-1788599131776-dd89abdd.mov",
+            "size": 20,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T09:05:31.786Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "174dd98e-427f-40a2-88bb-aa6d93e3a58c",
+            "originalName": "report.pdf",
+            "filename": "inbox-1788599131777-b07d5768.pdf",
+            "size": 20,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T09:05:31.786Z"
+          }
+        ],
+        "totalSize": 60,
+        "status": "accepted",
+        "sentAt": "2026-09-05T09:05:31.786Z",
+        "isViewApproved": true,
+        "viewApprovedAt": "2026-09-05T09:05:31.811Z",
+        "acceptedAt": "2026-09-05T09:05:31.922Z"
+      },
+      {
+        "transferId": "64bcfd47-4860-4061-a00a-5e327fb698b4",
+        "senderUserId": null,
+        "senderName": "Guest Sender",
+        "title": "Project Photos & Reports",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "9b76fb9d-d668-4625-9672-6333f2573b52",
+            "originalName": "sample_photo.jpg",
+            "filename": "inbox-1788591680385-952eae71.jpg",
+            "size": 20,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T07:01:20.395Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "ade83767-a872-49a6-9124-cd9021672fca"
+          },
+          {
+            "id": "ade83767-a872-49a6-9124-cd9021672fca",
+            "originalName": "sample_photo.mov",
+            "filename": "inbox-1788591680385-6bcff82c.mov",
+            "size": 20,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T07:01:20.395Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "21e66d61-f0a4-4ac6-a8e9-86f08af0cfc3",
+            "originalName": "report.pdf",
+            "filename": "inbox-1788591680385-a243f83f.pdf",
+            "size": 20,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T07:01:20.395Z"
+          }
+        ],
+        "totalSize": 60,
+        "status": "accepted",
+        "sentAt": "2026-09-05T07:01:20.395Z",
+        "isViewApproved": true,
+        "viewApprovedAt": "2026-09-05T07:01:20.420Z",
+        "acceptedAt": "2026-09-05T07:01:20.446Z"
+      },
+      {
+        "transferId": "6cde019a-03ec-41cb-a440-84f1a9522642",
+        "senderUserId": null,
+        "senderName": "Guest Sender",
+        "title": "Project Photos & Reports",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "de63c3b9-7f3b-4ddd-8f41-1fb652d3c8c6",
+            "originalName": "sample_photo.jpg",
+            "filename": "inbox-1788591349877-bad6d2f7.jpg",
+            "size": 20,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:55:49.881Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "22589090-ca9d-4f64-8987-5544b1cdcc2d"
+          },
+          {
+            "id": "22589090-ca9d-4f64-8987-5544b1cdcc2d",
+            "originalName": "sample_photo.mov",
+            "filename": "inbox-1788591349877-e67481a3.mov",
+            "size": 20,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:55:49.881Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "fbc7fc72-096b-4958-9e09-b4a0826c77c1",
+            "originalName": "report.pdf",
+            "filename": "inbox-1788591349877-23c430cf.pdf",
+            "size": 20,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:55:49.881Z"
+          }
+        ],
+        "totalSize": 60,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:55:49.881Z",
+        "isViewApproved": true,
+        "viewApprovedAt": "2026-09-05T06:55:49.907Z",
+        "acceptedAt": "2026-09-05T06:55:49.981Z"
+      }
+    ],
+    "createdAt": "2026-09-05T06:55:49.797Z",
+    "lastActivityAt": "2026-09-05T09:05:31.786Z"
+  },
+  {
+    "id": "INB-X98GF4",
+    "secretToken": "7af04bf359511e034131a4d82cf2e12fed00769bd0ad0715",
+    "userId": "17d397ab-80ff-421e-940c-27b0ca724eea",
+    "userEmail": "audit.tester@gmail.com",
+    "hostName": "Audit Tester",
+    "sendUrl": "http://192.168.18.16:3001/send-to/INB-X98GF4",
+    "qrDataUrl": "data:image/png;base64,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",
+    "status": "waiting",
+    "isPermanent": true,
+    "expiresAt": null,
+    "pendingTransfers": [
+      {
+        "transferId": "1e15ac8f-0c63-4b2b-912a-98a48c11805d",
+        "senderUserId": null,
+        "senderName": "Guest Sender",
+        "title": "Project Photos & Reports",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "657d8fa6-dd1f-4dc7-be8b-48e178382dc6",
+            "originalName": "sample_photo.jpg",
+            "filename": "inbox-1788590986943-0ecced3b.jpg",
+            "size": 20,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:49:46.952Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "c787dfc2-b2b0-4662-aacd-004c42b9e8b8"
+          },
+          {
+            "id": "c787dfc2-b2b0-4662-aacd-004c42b9e8b8",
+            "originalName": "sample_photo.mov",
+            "filename": "inbox-1788590986944-a274383d.mov",
+            "size": 20,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:49:46.952Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "4d19c8c7-14b5-43b5-a181-fd4b6dd423e4",
+            "originalName": "report.pdf",
+            "filename": "inbox-1788590986944-a6429990.pdf",
+            "size": 20,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:49:46.952Z"
+          }
+        ],
+        "totalSize": 60,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:49:46.952Z",
+        "isViewApproved": true,
+        "viewApprovedAt": "2026-09-05T06:49:46.974Z",
+        "acceptedAt": "2026-09-05T06:49:47.039Z"
+      }
+    ],
+    "createdAt": "2026-09-05T06:49:46.865Z",
+    "lastActivityAt": "2026-09-05T06:49:46.952Z"
+  },
+  {
     "id": "INB-9TP4GN",
     "secretToken": "c42e6f85725052a2f7132f278c5186d46bd2026e080ce62c",
     "userId": "4a5a50fb-bbe3-44ae-a790-af4a92e0efe8",
@@ -22,6 +254,198 @@
     "qrDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAAArrSURBVO3BwZEsuJElwMewEgBH6AD9RYEOOEKDXh7nsjRDTGdPfpa7/+uvfwsAPKoAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaPjJP2DMFf5e9+x80pgrn3TPzp9uzJUX9+y8GHPlxT07f7IxV/h73bPzSRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABp+8oXu2flNxlz5tDFXXtyz80ljrry4Z+fFmCu/zZgrL+7ZeTHmyot7dj7tnp3fZMyVb1IBgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKDhJ/8Fxlz5JvfsfJt7dl6MufLinp0X9+y8GHPl29yz82LMFf5vjbnyTe7Z+ZNVAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBo+An8DcZc+ZPds/Np9+y8GHPlk8ZceXHPDvxPFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGn7CrzDmyot7dvjPxlz5JvfsfNKYKy/u2eG/WwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIaf/Be4Z4f/7J6dF2OuvLhn58WYK7/NPTsvxlz5pDFXfpt7dvj7VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaPjJFxpzhb/XmCsv7tl5MebKi3t2Xoy58uKenRdjrry6Z+fFmCsv7tl5MebKi3t2Xoy58m3GXOH/TgUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADT8669/C/wvjbny4p6d32bMlT/ZPTvwP1UAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGj4yT9gzJUX9+y8GHPlxT07L8ZceXHPzosxV17ds/NJY678ycZc+dPds/NNxlx5cc/Otxlz5cU9O5805sqLe3a+SQUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIaf/APu2Xkx5sqLe3ZejLny4p6dF2OuvLhn5093z84njbnCfzbmyot7dj5pzJVPu2fnxT07L8ZceXHPzot7dl6MufLinp1PqgBAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0PCTf8CYKy/u2flNxlz5tHt2Xtyz82LMlW9yz86LMVde3bPzSWOufJN7dl6MufLinp1XY6580j07L8Zc+U0qANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0/Ouvf8uXGXPlN7ln59PGXPmke3a+yZgrL+7Z+bQxV17cs/NizJVPumfnxZgr3+aenRdjrry4Z+fFmCsv7tn5JhUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABp+8g8Yc+U3uWfnxZgrn3bPzosxVz5pzJUX9+y8uGfnxZgrr+7ZeXHPzje5Z+fFmCufdM/OqzFXXoy58uKenW8y5sqLe3Y+qQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMNPvtA9Oy/GXPmT3bPDfzbmyot7dl7cs/PbjLny4p6dF2Ou/OnGXHlxz86Le3ZejLnyTSoA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADT85B9wz86LMVd+kzFXXt2z82LMld9kzJUX9+y8GnPlk+7Z+aR7dl6MufJJY658m3t2Xoy58ptUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAw0/+C9yz8ye7Z+fVmCsv7tl5MebKN7ln5093z86LMVc+acyVF/fsvBhz5dvcs/NizJVvcs/ON6kAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANDwk19ozBX437pn58WYKy/u2Xkx5sqLe3ZejLnCf3bPzosxV16MufLinp1PqgBAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0PCTL3TPzosxV17cs/NizJVPumfn08Zc+Sb37LwYc+WT7tn5092z82LMlRf37LwYc+XbjLny4p6dT7pn58WYK9+kAgANFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAw0/+AWOuvLhn55PGXPkmY6582j07f7J7dj5pzJVX9+x80pgrn3TPzm9zz86LMVde3LPzYsyVP1kFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGn/wD7tl5MebKi3t2vsmYKy/u2Xk15sonjbny4p6dTxpz5duMufLinp0XY658kzFXPumenU8bc+XFPTsvxlz5pHt2vkkFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGn/wDxlx5cc/OizFXPumenU8ac4W/1z07L8Zc+bQxV17cs/NJY658kzFX/nT37PwmFQBoqABAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGn7yD7hn55Pu2fkm9+x8mzFXvsmYKy/u2fk29+y8GHPlk8ZceXHPzosxV17cs/Ntxlz5JmOufNI9O59UAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACg4Sf/gDFX+Hvds/Pinp1PGnPlxT07nzTmyot7dl6NufLinp1PumfnxZgr32TMlVf37HzSmCsv7tn5TSoA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0FABgIYKADRUAKDhJ1/onp3fZMyVP909Oy/GXPmke3Y+7Z6dF2Ou8P93z863uWfnxZgrn3TPzjepAEBDBQAaKgDQUAGAhgoANFQAoKECAA0VAGioAEBDBQAaKgDQ8JP/AmOufJN7dr7NmCvf5J6d3+aenU8ac+WbjLnypxtz5cU9Oy/GXHkx5sqLe3Y+qQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMNP+BXu2fmkMVdejLnyTe7ZeTXmyot7dr7JPTsvxlz5NvfsfNKYK9/knp1vUgGAhgoANFQAoKECAA0VAGioAEBDBQAaKgDQUAGAhgoANFQAoOEn/ApjrnzSPTsvxlx5cc/OizFXXoy58uqenRdjrnyTMVde3LPzSWOuvBpz5ZPu2fmke3ZejLny4p6dT6oAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANDwr7/+LR825sqLe3Z+kzFXXt2z80ljrvzJ7tl5MebKp92z80ljrry4Z+eTxlx5cc/OqzFXvsk9Oy/GXHlxz843qQBAQwUAGioA0FABgIYKADRUAKChAgANFQBoqABAQwUAGioA0PCvv/4tHzbmCn+ve3ZejLny4p6dF2Ou8Pe6Z+dPNubKn+6enRdjrnyTe3Y+qQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQMO//vq3AMCjCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANBQAYCGCgA0VACgoQIADRUAaKgAQEMFABoqANDw/wB9pFVTtDomAQAAAABJRU5ErkJggg==",
     "status": "waiting",
     "pendingTransfers": [
+      {
+        "transferId": "e0c0b5ce-7990-4345-b664-519bfb3aec73",
+        "senderUserId": null,
+        "senderName": "Guest Phone",
+        "title": "Vacation Live Photos",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "c346f01d-9a9e-471e-a620-3983073c3dd1",
+            "originalName": "IMG_0001.JPG",
+            "filename": "inbox-1788590840440-79a844de.jpg",
+            "size": 18,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:47:20.447Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "7b23aa99-99d8-40f0-bcd5-e864ce99c441"
+          },
+          {
+            "id": "7b23aa99-99d8-40f0-bcd5-e864ce99c441",
+            "originalName": "IMG_0001.MOV",
+            "filename": "inbox-1788590840440-41873bb5.mov",
+            "size": 18,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:47:20.447Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "a526c713-bb98-48cd-876f-6459eb4fc205",
+            "originalName": "document.pdf",
+            "filename": "inbox-1788590840440-2ca29876.pdf",
+            "size": 16,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:47:20.447Z"
+          }
+        ],
+        "totalSize": 52,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:47:20.447Z",
+        "acceptedAt": "2026-09-05T06:47:20.462Z"
+      },
+      {
+        "transferId": "41b116aa-7938-44e2-8b38-d8eb4c6ac51d",
+        "senderUserId": null,
+        "senderName": "Guest Phone",
+        "title": "Vacation Live Photos",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "04aa83fb-1552-4e45-9765-0d361571a8c6",
+            "originalName": "IMG_0001.JPG",
+            "filename": "inbox-1788590309271-7fbff9cb.jpg",
+            "size": 18,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:38:29.303Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "866e19c8-2e50-4843-988c-bccc642a7850"
+          },
+          {
+            "id": "866e19c8-2e50-4843-988c-bccc642a7850",
+            "originalName": "IMG_0001.MOV",
+            "filename": "inbox-1788590309272-5ed6aaea.mov",
+            "size": 18,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:38:29.303Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "2e3569e4-d4b0-4db4-832f-fde980e0f191",
+            "originalName": "document.pdf",
+            "filename": "inbox-1788590309272-23d8009a.pdf",
+            "size": 16,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:38:29.303Z"
+          }
+        ],
+        "totalSize": 52,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:38:29.303Z",
+        "acceptedAt": "2026-09-05T06:38:29.340Z"
+      },
+      {
+        "transferId": "181ef8ec-72ca-497e-9bdc-e997d6e0c7b1",
+        "senderUserId": null,
+        "senderName": "Guest Phone",
+        "title": "Vacation Live Photos",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "9d8ab978-f219-4448-873b-e73d6aa75e2f",
+            "originalName": "IMG_0001.JPG",
+            "filename": "inbox-1788590142521-60712058.jpg",
+            "size": 18,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:35:42.525Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "c2fab41b-8961-4435-b2de-12fe30d0afa5"
+          },
+          {
+            "id": "c2fab41b-8961-4435-b2de-12fe30d0afa5",
+            "originalName": "IMG_0001.MOV",
+            "filename": "inbox-1788590142521-71d603f0.mov",
+            "size": 18,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:35:42.525Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "75af7c9b-7100-4c95-8a6e-536931db522a",
+            "originalName": "document.pdf",
+            "filename": "inbox-1788590142522-ceded6db.pdf",
+            "size": 16,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:35:42.525Z"
+          }
+        ],
+        "totalSize": 52,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:35:42.525Z",
+        "acceptedAt": "2026-09-05T06:35:42.542Z"
+      },
+      {
+        "transferId": "9556b14c-1d6b-48e1-9e3f-26570f104cd3",
+        "senderUserId": null,
+        "senderName": "Guest Phone",
+        "title": "Vacation Live Photos",
+        "folderName": "",
+        "note": "",
+        "isHighQuality": true,
+        "files": [
+          {
+            "id": "fb199d50-3ba9-4c19-ad65-a35f57f41e9f",
+            "originalName": "IMG_0001.JPG",
+            "filename": "inbox-1788589769470-8a2e6c75.jpg",
+            "size": 18,
+            "mimetype": "image/jpeg",
+            "isImage": true,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:29:29.474Z",
+            "isLivePhoto": true,
+            "pairedLiveVideoId": "d6acf2b6-5dcd-4ab7-aac8-fdaca9e1da54"
+          },
+          {
+            "id": "d6acf2b6-5dcd-4ab7-aac8-fdaca9e1da54",
+            "originalName": "IMG_0001.MOV",
+            "filename": "inbox-1788589769470-0233d97c.mov",
+            "size": 18,
+            "mimetype": "video/quicktime",
+            "isImage": false,
+            "isVideo": true,
+            "uploadedAt": "2026-09-05T06:29:29.474Z",
+            "isLiveVideoComponent": true
+          },
+          {
+            "id": "6b2d59aa-a8e3-4bfe-858c-2f99e9fa1a81",
+            "originalName": "document.pdf",
+            "filename": "inbox-1788589769470-392b2877.pdf",
+            "size": 16,
+            "mimetype": "application/pdf",
+            "isImage": false,
+            "isVideo": false,
+            "uploadedAt": "2026-09-05T06:29:29.474Z"
+          }
+        ],
+        "totalSize": 52,
+        "status": "accepted",
+        "sentAt": "2026-09-05T06:29:29.474Z",
+        "acceptedAt": "2026-09-05T06:29:29.493Z"
+      },
       {
         "transferId": "100331d9-e0fb-44d7-a0ab-2dc8f1cee409",
         "senderUserId": null,
@@ -72,7 +496,7 @@
       }
     ],
     "createdAt": "2026-09-05T06:08:49.163Z",
-    "lastActivityAt": "2026-09-05T06:08:49.212Z"
+    "lastActivityAt": "2026-09-05T06:47:20.447Z"
   },
   {
     "id": "INB-SVPA2Q",

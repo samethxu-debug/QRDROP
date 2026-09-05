@@ -178,9 +178,9 @@ async function runComprehensiveAudit() {
     assert(unlockSuccessRes.status === 200 && unlockSuccessData.downloadToken, 'Unlock with correct password returns 200 OK & downloadToken');
 
     // ---------------------------------------------------------
-    // TEST 7: Malware & Prohibited File Filtering Security Checks
+    // TEST 7: Malware Filtering & Skipped Restricted Files
     // ---------------------------------------------------------
-    console.log('\n[7] Testing Malware & Prohibited File Security Blockers...');
+    console.log('\n[7] Testing Malware Blockers & Skipping Restricted Entries...');
     fs.writeFileSync('bad.exe', 'MZ binary');
     const badForm = new FormData();
     badForm.append('files', new Blob([fs.readFileSync('bad.exe')], { type: 'application/x-msdownload' }), 'bad.exe');
@@ -190,7 +190,7 @@ async function runComprehensiveAudit() {
       headers: { Authorization: `Bearer ${adminToken}` },
       body: badForm,
     });
-    assert(badRes.status === 400, 'Direct upload of .exe file is blocked with 400 Bad Request');
+    assert(badRes.status === 400, 'Direct upload of pure .exe file is blocked with 400 Bad Request');
     fs.unlinkSync('bad.exe');
 
     // ---------------------------------------------------------

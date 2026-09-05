@@ -57,8 +57,10 @@ export const translations = {
     passwordProtectPlaceholder: "លេខសម្ងាត់សម្រាប់បើកឯកសារ",
     sendButton: "បង្កើត QR Code ផ្ញើឯកសារ",
     uploading: "កំពុងបញ្ចូលឯកសារ...",
-    securityRestrictedWarning: "ប្រព័ន្ធបានទប់ស្កាត់ឯកសារមិនមានសុវត្ថិភាព (Executables/Scripts/Archives)",
-    securityBlockedFiles: "ឯកសារដែលត្រូវបានបដិសេធ៖",
+    securityRestrictedWarning: "ប្រព័ន្ធបានរំលងឯកសារមិនមានសុវត្ថិភាព (Executables/Scripts) និងបន្តបញ្ចូលតែឯកសារដែលបានអនុញ្ញាត",
+    securityBlockedFiles: "ឯកសារដែលត្រូវបានរំលង (Skipped Restricted Files)៖",
+    skippedRestrictedNotice: "បានរំលងឯកសារមិនអនុញ្ញាត ហើយបន្តបញ្ចូលឯកសារដែលបានអនុញ្ញាត",
+    allFilesRestrictedError: "ឯកសារទាំងអស់ក្នុង Folder/ZIP នេះត្រូវបានទប់ស្កាត់ និងរំលង។",
 
     // Founder Info
     founderLabel: "ស្ថាបនិក (Founder)",

@@ -108,8 +108,11 @@ export default function UploadSection({ user, t, onShareCreated, onOpenAuth }) {
     });
 
     if (blocked.length > 0) {
-      setBlockedFilesList(blocked);
-      setError(`${t.securityRestrictedWarning} (${blocked.map((b) => b.name).slice(0, 3).join(', ')}${blocked.length > 3 ? '...' : ''})`);
+      setBlockedFilesList((prev) => [...prev, ...blocked]);
+      if (allowed.length === 0) {
+        setError(t.allFilesRestrictedError || 'All selected files were restricted and skipped.');
+        return;
+      }
     }
 
     if (allowed.length === 0) return;
