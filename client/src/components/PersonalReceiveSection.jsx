@@ -516,72 +516,99 @@ export default function PersonalReceiveSection({ user, t, onOpenAuth }) {
             {/* Content Preview Body (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               
-              {/* Photo Previews */}
-              {imageFiles.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-teal-400" />
-                    <span>{t.previewImage || 'Preview Photos'} ({imageFiles.length})</span>
-                  </span>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                    {imageFiles.map((img, idx) => {
-                      const hasLiveVideo = Boolean(img.isLivePhoto || img.pairedLiveVideoId);
-                      return (
-                        <div
-                          key={img.id}
-                          onClick={() => setLightboxIndex(idx)}
-                          className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 hover:border-teal-500 cursor-pointer transition shadow-md"
-                        >
-                          <img
-                            src={`/api/inbox/${inbox.id}/preview/${img.id}`}
-                            alt={img.originalName}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            onError={(e) => {
-                              e.target.style.opacity = '0';
-                            }}
-                          />
-                          {hasLiveVideo && (
-                            <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-slate-950/85 border border-teal-500/40 text-[9px] font-extrabold text-teal-300 flex items-center gap-1 shadow-md backdrop-blur-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping" />
-                              <span>LIVE</span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-teal-300">
-                            <Eye className="w-4 h-4" />
-                          </div>
-                        </div>
-                      );
-                    })}
+              {!pendingTransfer.isViewApproved ? (
+                <div className="p-6 rounded-3xl bg-slate-950/90 border border-amber-500/30 text-center space-y-4 shadow-xl">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <ShieldCheck className="w-7 h-7" />
                   </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-white mb-1">
+                      {t.photosProtectedTitle || '🔒 រូបភាពត្រូវបានការពារ (Photos Protected)'}
+                    </h3>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      {t.photosProtectedDesc || 'សូមចុច "យល់ព្រមឱ្យមើលរូបភាព" ជាមុនសិន ដើម្បីទាញយករូបភាព និងមើលក្នុងកម្រិតច្បាស់ HD'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApproveView(pendingTransfer)}
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-teal-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 hover:scale-105 transition cursor-pointer flex items-center justify-center gap-2 mx-auto"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>{t.approveAndUnlockBtn || '🔓 យល់ព្រមឱ្យមើលរូបភាព (Approve & Unlock Viewing)'}</span>
+                  </button>
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Photo Previews */}
+                  {imageFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-teal-400" />
+                        <span>{t.previewImage || 'Preview Photos'} ({imageFiles.length})</span>
+                      </span>
 
-              {/* All Files List */}
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-teal-400" />
-                  <span>{t.selectedFiles} ({pendingTransfer.files.length})</span>
-                </span>
-
-                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl divide-y divide-slate-800/80 overflow-hidden">
-                  {pendingTransfer.files.map((file) => (
-                    <div key={file.id} className="p-3 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
-                          {getFileIcon(file)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-white truncate max-w-xs sm:max-w-md">
-                            {file.originalName}
-                          </p>
-                          <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
-                        </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                        {imageFiles.map((img, idx) => {
+                          const hasLiveVideo = Boolean(img.isLivePhoto || img.pairedLiveVideoId);
+                          return (
+                            <div
+                              key={img.id}
+                              onClick={() => setLightboxIndex(idx)}
+                              className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 hover:border-teal-500 cursor-pointer transition shadow-md"
+                            >
+                              <img
+                                src={`/api/inbox/${inbox.id}/preview/${img.id}`}
+                                alt={img.originalName}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                                onError={(e) => {
+                                  e.target.style.opacity = '0';
+                                }}
+                              />
+                              {hasLiveVideo && (
+                                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-slate-950/85 border border-teal-500/40 text-[9px] font-extrabold text-teal-300 flex items-center gap-1 shadow-md backdrop-blur-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping" />
+                                  <span>LIVE</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-teal-300">
+                                <Eye className="w-4 h-4" />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  )}
+
+                  {/* All Files List */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-teal-400" />
+                      <span>{t.selectedFiles} ({pendingTransfer.files.length})</span>
+                    </span>
+
+                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl divide-y divide-slate-800/80 overflow-hidden">
+                      {pendingTransfer.files.map((file) => (
+                        <div key={file.id} className="p-3 flex items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+                              {getFileIcon(file)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-white truncate max-w-xs sm:max-w-md">
+                                {file.originalName}
+                              </p>
+                              <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
             </div>
 

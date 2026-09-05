@@ -405,15 +405,22 @@ router.get('/:inboxId/preview/:fileId', (req, res) => {
     if (!inbox) return res.status(404).send('Inbox not found');
 
     let targetFile = null;
+    let targetTransfer = null;
     for (const transfer of inbox.pendingTransfers || []) {
       const found = transfer.files.find((f) => f.id === fileId);
       if (found) {
         targetFile = found;
+        targetTransfer = transfer;
         break;
       }
     }
 
-    if (!targetFile) return res.status(404).send('File not found');
+    if (!targetFile || !targetTransfer) return res.status(404).send('File not found');
+
+    // Security & Privacy Protection: Require explicit viewing approval from recipient before streaming photo previews
+    if (!targetTransfer.isViewApproved && targetTransfer.status !== 'accepted') {
+      return res.status(403).send('Viewing approval required. Recipient must approve viewing access first.');
+    }
 
     const filePath = safeResolveUploadPath(uploadsDir, targetFile.filename);
     if (!fs.existsSync(filePath)) {
